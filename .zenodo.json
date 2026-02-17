@@ -1,20 +1,15 @@
 {
     "creators": [
         {
-            "orcid": "0000-0003-3891-5444",
             "affiliation": "ACCESS-NRI",
-            "name": "Beucher, Romain"
-        },
-        {
-            "affiliation": "ACCESS-NRI",
-            "name": "Carouge, Claire"
+            "name": "Goyal, Abhaas"
         }
     ],
 
     "license": "Apache-2.0",
 
-    "title": "ACCESS-NRI Template",
-    "decription": "Template repository for ACCESS-NRI, test",
+    "title": "metplan",
+    "decription": "Met-Preprocessing tool for Land Surface Models",
 
     "keywords": ["Climate", "Science", "ACCESS-NRI", "NCI"],
 

@@ -1,0 +1,149 @@
+# Standard Params
+
+Tair:
+  type: standard
+  input_param:
+    - tavg
+    - temp
+    - t2m
+  unit:
+    kelvin
+SWDown:
+  type: standard
+  input_param:
+    - srad
+    - ssrd
+  unit:
+    W m-2
+Qair:
+  type: standard
+  input_param:
+    - Qair
+  unit:
+    kg kg-1
+  calc:
+    - deps:
+        vp,vpd,Tair
+      func:
+        vp_vpd_tair_sh
+    - deps:
+        vp,Tair
+      func:
+        vp_tair_sh
+    - deps:
+        vpd,Tair
+      func:
+        vpd_tair_sh
+    - deps:
+        PSurf,dewp
+      func:
+        sp_dewp_sh
+        
+Rainf:
+  type: standard
+  input_param:
+    - rain
+    - tp
+  unit:
+    mm s-1
+    # kg m-2 s-1 (JULES)
+
+Wind:
+  type: standard
+  unit:
+    m s-1
+  calc:
+  - deps:
+      wind_e,wind_n
+    func:
+      wind_speed
+
+# In between params
+vpd:
+  type: 
+    conversion
+  input_param:
+    - vpd
+
+dewp:
+  type: 
+    conversion
+  input_param:
+    - d2m
+
+wind_e:
+  type: 
+    conversion
+  unit:
+    m s-1
+  input_param:
+    - u10
+wind_n:
+  type: 
+    conversion
+  unit:
+    m s-1
+  input_param:
+    - v10
+
+elevation:
+  type: conversion
+  input_param:
+    - dem01
+  unit:
+    m
+
+tmax:
+  type: conversion
+
+tmin:
+  type: conversion
+
+# Optional Params
+LWDown:
+  type: optional
+  input_param:
+    - strd
+  calc:
+    - deps:
+        Tair
+      func:
+        calc_lwdown_swinbank
+  unit:
+    W m-2
+PSurf:
+  type: optional
+  input_param:
+    - sp
+  calc:
+    - deps:
+        Tair,elevation
+      func:
+        calc_psurf
+  unit:
+    Pa
+Snowf:
+  type: optional
+  unit:
+    mm s-1
+  input_param:
+    - sf
+  calc:
+    - deps:
+        Tair,Rainf
+      func:
+        calc_snow
+
+CO2air:
+  type: optional
+  unit:
+    ppm
+  calc:
+    - func:
+        default_co2
+
+# Only for flux-site runs
+# patchfrac:
+#   type: optional
+#   unit:
+#     dimensionless

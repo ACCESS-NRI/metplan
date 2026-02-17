@@ -1,57 +1,64 @@
-# General Repository Template
+# Met-forcings Preprocessor
 
-A general template repository for default settings when creating new repositories.
+## Configuration Options
+### User guide
 
-This repository uses the Apache-2.0 license. `COPYRIGHT.txt` contains a current copyright statement which should be included at the top of all files.
+See `config.yaml` for an example configuration
 
-When creating a new repository you [can use this repository as a template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template), to automate the creation of the correct license and COPYRIGHT statement.
+1. `directories` = A list of directories from which every `.nc` file would be picked, or filename is provided, use invidual file. Recommended to use absolute paths
+2. `output_file` = Output file_name for combined outputs
 
-## COPYRIGHT Header
+### Developer guide
 
-Best practice suggests adding a copyright statement at the top of every source code file, or text file where it is possible to add a copyright statement without interfering with the purpose of the file. The reasoning is if a file is separated from the repository in which it resides then it may not be possible to ascertain it's licensing, which may hamper re-use.
+See `param_map.yaml` for an example configuration
 
-Making this as short and concise as possible reduces the overhead in including such a copyright statement. To that end using [SPDX identifiers](https://spdx.dev/ids/) is simple, efficient, portable and machine-readable.
+The top level keys are the names of all possible output preprocessor parameters. For example:
 
-### Examples
+```
+Qair:
+  type: standard
+  input_param:
+    - Qair
+  calc:
+    - deps:
+        vp,vpd,Tair
+      func:
+        vp_vpd_tair_sh
+  unit:
+    kg kg-1
+```
 
-An example, short, copyright statement is reproduced below, as it might appear in different coding languages. Copy and add to files as appropriate: 
+Here, `Qair` represents specific humidity as the output.
 
-#### plaintext
-It is common to include copyright statements at the bottom of a text document or website page
+- `type` (required) = `standard`/`optional`/`conversion` = Standard/Optional types correspond to mandatory/optional parameters used in the model. Conversion inputs are only used during calculations but not present in the final output.
+- `input_param` (optional) = The input datasets would have different parameter names, they are to be renamed. Not supported for naming conflicts.
+- `calc` (optional) = In case the input parameters are not provided but can be calculated with some other dependencies. Not supported for Cyclic dependencies. As of now, also not supported for ordered priority of dependencies.
+- `unit` (required for optional/standard types) = Should be compatible with 
+
+## Installation
+
+1. On Gadi, load `analysis3` environment
+2. `pip install -e .` to have editable changes for testing
+
+## Usage
+
+From the project root folder
+`python src/met_preprocessor/met_preprocessing.py`
+
+In case running from another directory, change the following variables to their absolute file name paths in `src/met_preprocessor/met_preprocesssing.py`
+
+```py
+CONFIG_FILE_NAME = "/path/to/config.yaml"
+PARAM_MAP_FILE_NAME = "/path/to/param_map.yaml"
+```
+
+## Testing
+
+`pytest`
+
+# Licence
+
 ```text
-© 2022 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details. 
+© 2026 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details. 
 SPDX-License-Identifier: Apache-2.0
 ```
-
-#### python
-For code it is more common to include the copyright in a comment at the top
-```python
-# Copyright 2022 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details.
-# SPDX-License-Identifier: Apache-2.0
-```
-
-#### shell
-```bash
-# Copyright 2022 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details.
-# SPDX-License-Identifier: Apache-2.0
-```
-
-##### FORTRAN
-```fortran
-! Copyright 2022 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details.
-! SPDX-License-Identifier: Apache-2.0
-```
-
-#### C/C++ 
-```c
-// Copyright 2022 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details.
-// SPDX-License-Identifier: Apache-2.0
-```
-
-### Notes
-
-Note that the date is the first time the project is created. 
-
-The date signifies the year from which the copyright notice applies. **NEVER** replace with a later year, only ever add later years or a year range. 
-
-It is not necessary to include subsequent years in the copyright statement at all unless updates have been made at a later time, and even then it is largely discretionary: they are not necessary as copyright is contingent on the lifespan of copyright holder +50 years as per the [Berne Convention](https://en.wikipedia.org/wiki/Berne_Convention).

@@ -1,0 +1,18 @@
+directories:
+  - /g/data/zz93/era5-land/reanalysis/ssrd/1950/ssrd_era5-land_oper_sfc_19500101-19500131.nc
+  - /g/data/zz93/era5-land/reanalysis/strd/1950/strd_era5-land_oper_sfc_19500101-19500131.nc
+  - /g/data/zz93/era5-land/reanalysis/tp/1950/tp_era5-land_oper_sfc_19500101-19500131.nc
+  - /g/data/zz93/era5-land/reanalysis/2t/1950/2t_era5-land_oper_sfc_19500101-19500131.nc
+  - /g/data/zz93/era5-land/reanalysis/sp/1950/sp_era5-land_oper_sfc_19500101-19500131.nc
+  - /g/data/zz93/era5-land/reanalysis/2d/1950/2d_era5-land_oper_sfc_19500101-19500131.nc
+  - /g/data/zz93/era5-land/reanalysis/u10/1950/u10_era5-land_oper_sfc_19500101-19500131.nc
+  - /g/data/zz93/era5-land/reanalysis/v10/1950/v10_era5-land_oper_sfc_19500101-19500131.nc
+  # - /g/data/zz93/era5-land/reanalysis/sf/1950/sf_era5-land_oper_sfc_19500101-19500131.nc
+
+hourly_acc:
+  # - Snowf
+  - SWDown
+  - LWDown
+  - Rainf
+
+output_file: /scratch/tm70/ag9761/temp3
