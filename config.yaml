@@ -15,4 +15,5 @@ hourly_acc:
   - LWDown
   - Rainf
 
-output_file: /scratch/tm70/ag9761/temp3
+output_file: /scratch/tm70/ag9761/met_data/temp3
+output_folder: /scratch/tm70/ag9761/met_data
