@@ -1,5 +1,5 @@
-import met_preprocessor.standard_param as standard_param
-import met_preprocessor.opt_param as opt_param
+import metplan.standard_param as standard_param
+import metplan.opt_param as opt_param
 import itertools
 
 

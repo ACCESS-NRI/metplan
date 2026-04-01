@@ -5,9 +5,10 @@ Credits
 Development Lead
 ----------------
 
-* ACCESS-NRI <abhaas.goyal@anu.edu.au>
+* Abhaas Goyal <abhaas.goyal@anu.edu.au>
 
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Ben Schroeter <ben.schroeter@anu.edu.au>
+* Claire Carouge <claire.carouge@anu.edu.au>

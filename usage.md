@@ -1,17 +1,4 @@
-metplan: Met-forcings Preprocessor
-=======
-
-
-![PyPI version](https://img.shields.io/pypi/v/metplan.svg)
-[![Build Status](https://img.shields.io/travis/ACCESS-NRI/metplan.svg)](https://travis-ci.com/ACCESS-NRI/metplan)
-[![Documentation Status](https://readthedocs.org/projects/metplan/badge/?version=latest)](https://metplan.readthedocs.io/en/latest/?version=latest)
-
-Python package for preprocessing the met forcings for land models.
-
-
-* Free software: Apache Software License 2.0
-* Documentation: [https://metplan.readthedocs.io](https://metplan.readthedocs.io)
-
+# Met-forcings Preprocessor
 
 ## Configuration Options
 ### User guide
@@ -75,7 +62,3 @@ PARAM_MAP_FILE_NAME = "/path/to/param_map.yaml"
 © 2026 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details. 
 SPDX-License-Identifier: Apache-2.0
 ```
-
-## Credits
-
-This package was created with [Cookiecutter](https://github.com/audreyr/cookiecutter) and the [`ACCESS-NRI/cookiecutter-pypackage-access`](https://github.com/ACCESS-NRI/cookiecutter-pypackage-access) project template. 

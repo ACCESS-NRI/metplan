@@ -5,3 +5,6 @@ build-backend = "hatchling.build"
 [project]
 name = "metplan"
 version = "0.1"
+
+[project.scripts]
+metplan = "metplan.main:main"

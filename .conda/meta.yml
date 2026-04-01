@@ -21,7 +21,11 @@ requirements:
     - pip
     - versioneer
   run:
-    - python >=3.10
+    # Dependencies
+    - xarray
+    - pint
+    # Dev Dependencies
+    - python>=3.10
     - pip>=24.0
     - wheel==0.33.6
     - watchdog==0.9.0
