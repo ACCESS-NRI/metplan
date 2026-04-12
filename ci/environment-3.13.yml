@@ -8,8 +8,8 @@ dependencies:
   # TODO: Add suitable versions for everything 
   - xarray
   - pint
-  - dask==2025.5.1
-  - netcdf4==1.7.4
+  - dask==2025.5
+  - netcdf4==1.7
   # Dev Dependencies
   - python==3.13
   - pip>=24.0
@@ -20,7 +20,7 @@ dependencies:
   - sphinx
   - twine
   - ruff
-  - mypy==1.19.1
+  - mypy==1.19
   - pytest
   
 
