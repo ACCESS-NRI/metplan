@@ -9,7 +9,7 @@ dependencies:
   - xarray
   - pint
   - dask==2025.5
-  - netcdf4==1.7
+  - netcdf4
   # Dev Dependencies
   - python==3.13
   - pip>=24.0
