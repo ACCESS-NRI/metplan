@@ -1,15 +1,15 @@
 import pytest
-from met_preprocessor.met_preprocessing import (
+from metplan.metplan import (
     get_rename_param_criteria,
     get_unit_conv_params,
 )
-from met_preprocessor.dependency import (
+from metplan.dependency import (
     process_dependencies,
     order_load_dep,
     cycle_check,
 )
-from met_preprocessor.opt_param import calc_lwdown_swinbank
-from met_preprocessor.standard_param import vpd_tair_sh
+from metplan.opt_param import calc_lwdown_swinbank
+from metplan.standard_param import vpd_tair_sh
 
 
 class TestGetRenameParamCriteria:

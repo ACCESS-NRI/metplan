@@ -4,7 +4,7 @@ import pandas as pd
 import xarray as xr
 from metpy.units import units
 
-from met_preprocessor.opt_param import (
+from metplan.opt_param import (
     calc_lwdown_swinbank,
     calc_psurf,
     calc_snow,

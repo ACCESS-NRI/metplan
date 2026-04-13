@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from met_preprocessor.utils import list_nc_files
+from metplan.utils import list_nc_files
 
 
 class TestListNcFiles:

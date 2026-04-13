@@ -4,7 +4,7 @@ import pandas as pd
 import xarray as xr
 from metpy.units import units
 
-from met_preprocessor.standard_param import (
+from metplan.standard_param import (
     vp_vpd_tair_sh,
     vp_tair_sh,
     vpd_tair_sh,

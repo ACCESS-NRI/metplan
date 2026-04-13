@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from met_preprocessor.accu import daily_to_hourly_acc
+from metplan.accu import daily_to_hourly_acc
 
 
 class TestDailyToHourlyAcc:

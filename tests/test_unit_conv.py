@@ -1,5 +1,5 @@
-from met_preprocessor.unit_conv import UnitConversion
-from met_preprocessor.met_preprocessing import get_unit_conv_params
+from metplan.unit_conv import UnitConversion
+from metplan.metplan import get_unit_conv_params
 import pytest
 
 
