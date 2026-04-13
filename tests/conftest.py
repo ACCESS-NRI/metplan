@@ -3,7 +3,7 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 import yaml
-from met_preprocessor.met_preprocessing import run_met
+from metplan.metplan import run_met
 
 TEST_PARAM_MAP_FILE = "tests/data/test_param_map.yaml"
 
