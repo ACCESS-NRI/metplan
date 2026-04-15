@@ -38,7 +38,7 @@ def calc_psurf(temperature, elevation):
 @check_units("[temperature]", "[length] / [time]")
 def calc_snow(temperature, rain):
     t = temperature.to("kelvin").m
-    return xr.where(t < T0.m, rain, 0.0, keep_attrs=True)
+    return xr.where(t <= T0.m, rain, 0.0, keep_attrs=True)
 
 
 def default_co2(coords, dims):

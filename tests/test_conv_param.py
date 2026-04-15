@@ -166,7 +166,8 @@ class TestWindSpeed:
             attrs={"units": "m/s"},
         ).metpy.quantify()
 
+        print("Given north", north)
         result = wind_speed(wind_e, wind_n)
 
-        assert float(result.metpy.dequantify()) == pytest.approx(expected, rel=1e-2)
+        assert float(result.metpy.dequantify().values[0]) == pytest.approx(expected, rel=1e-2)
 

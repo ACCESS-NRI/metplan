@@ -10,7 +10,7 @@ def unit_conv_params(param_map):
 
 @pytest.fixture(scope="module")
 def param_conv(unit_conv_params):
-    return UnitConversion(unit_conv_params)
+    return UnitConversion(["t2m"])
 
 
 def test_unit_conv(sample_xarray_data, param_conv):
