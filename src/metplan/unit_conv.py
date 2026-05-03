@@ -19,8 +19,9 @@ class UnitConversion:
         """Define additional unit conversions other than default ones
         in `metpy`/`pint`."""
         # TODO: Load from file
-        units.define("Celsius = degC")
-        units.define("HPa = 100 Pa")
+        if "Celsius" not in units:
+            units.define("Celsius = degC")
+            units.define("HPa = 100 Pa")
 
         # REVIEW: Concurrency issue on ctx if parallized
         for param in params:

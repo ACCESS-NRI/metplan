@@ -65,7 +65,7 @@ def run_met(client, dataset=None):
 
         ## TODO: Look more into parameter options for open_mfdataset
         logger.info("Loading combined dataset")
-        dataset = xr.open_mfdataset(file_list, compat="override", coords="minimal", chunks={"latitude": 360})
+        dataset = xr.open_mfdataset(file_list, compat="override", coords="minimal", chunks={"latitude": 360}, engine="h5netcdf")
         logger.info("Loaded combined dataset")
 
         # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
@@ -145,14 +145,14 @@ def run_met(client, dataset=None):
     )
 
     # Combine filtered params
-    compression_dict = {"zlib": True, "complevel": 5, "shuffle": True}
+    compression_dict = {"zlib": True, "complevel": 5, "shuffle": True, "dtype": "float64"}
 
     logger.info("Saving dataset")
     logger.debug(dataset)
     for var in dataset.data_vars:
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(compression_dict)
-        dataset[var].to_netcdf(f"{config['output_file']}_{var}.nc", format="NETCDF4")
+        dataset[var].to_netcdf(f"{config['output_file']}_{var}.nc", format="NETCDF4", engine="h5netcdf")
 
     logger.info("Saved dataset - Check log.txt for warnings")
 

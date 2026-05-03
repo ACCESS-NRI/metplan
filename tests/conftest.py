@@ -3,21 +3,8 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 import yaml
-from metplan.metplan import run_met
 
 TEST_PARAM_MAP_FILE = "tests/data/test_param_map.yaml"
-
-# Receive consistent results with the test output file
-seed_value = 42
-rng = np.random.default_rng(seed=seed_value)
-
-
-@pytest.fixture(scope="module")
-def param_map():
-    with open(TEST_PARAM_MAP_FILE) as file:
-        param_map = yaml.safe_load(file)
-    return param_map
-
 
 # TODO: Similar for leap year
 # TODO: Trusted short script for vpd / calc
@@ -59,7 +46,12 @@ def sample_xarray_data():
     )
     return ds
 
-def test_sample_dataset():
-    test_dataset = xr.open_dataset("tests/data/test_input.nc")
-    expected_dataset = xr.open_dataset("tests/data/test_output.nc")
-    assert run_met(test_dataset).equals(expected_dataset)
+
+
+
+@pytest.fixture(scope="module")
+def param_map():
+    with open(TEST_PARAM_MAP_FILE) as file:
+        param_map = yaml.safe_load(file)
+    return param_map
+

@@ -8,7 +8,7 @@ def daily_to_hourly_acc(da: DataArray) -> DataArray:
     diff_da = xr.concat(
         [
             gpd.first(keep_attrs=True).rename({"date": "time"}),
-            gpd.apply(lambda x: x.diff("time")),
+            gpd.map(lambda x: x.diff("time")),
         ],
         dim="time",
     )

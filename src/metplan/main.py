@@ -44,7 +44,7 @@ def main():
             client = Client(cluster)
         else:
             # client, cluster = my_start_PBS_dask_cluster()
-            print("Running on PBS")
+            logger.debug("Running on PBS")
             cluster = LocalCluster(n_workers=1, 
             processes=True, 
             memory_limit = int(os.environ['PBS_VMEM']), # / int(os.environ['PBS_NCPUS']), 
