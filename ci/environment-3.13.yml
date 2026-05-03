@@ -10,6 +10,8 @@ dependencies:
   - pint
   - dask==2025.5
   - netcdf4
+  - h5netcdf
+  - h5py
   # Dev Dependencies
   - python==3.13
   - pip>=24.0
