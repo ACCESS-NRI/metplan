@@ -18,5 +18,5 @@ def test_sample_dataset():
     expected_dataset = xr.open_dataset("tests/data/test_output.nc", engine="h5netcdf")
     cluster = LocalCluster(n_workers=4, threads_per_worker=1, memory_limit="4GB")
     client = Client(cluster)
-    output_dataset = run_met(client, test_dataset)
+    output_dataset = run_met("config.yaml", test_dataset)
     assert output_dataset.equals(expected_dataset)
