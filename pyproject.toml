@@ -5,6 +5,18 @@ build-backend = "hatchling.build"
 [project]
 name = "metplan"
 version = "0.1"
+dependencies = [
+    "dask[distributed]",
+    "dask-jobqueue",
+    "h5netcdf",
+    "h5py",
+    "metpy",
+    "netcdf4",
+    "pandas",
+    "pint",
+    "PyYAML",
+    "xarray",
+]
 
 [project.scripts]
 metplan = "metplan.main:main"
