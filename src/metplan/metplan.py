@@ -12,6 +12,7 @@ from dask import delayed
 from dask_jobqueue import PBSCluster
 import os
 import sys
+import time
 
 xr.set_options(keep_attrs=True)
 logger = get_logger()
@@ -44,13 +45,10 @@ with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
 
 
-def run_met(client, dataset=None):
+def run_met(config_path, dataset=None):
     """Run preprocessor for meteorological forcing dataset(s)."""
 
-    client.amm.start()
-    logger.info(f"Diagnostics: {client.dashboard_link}")
-
-    with open(CONFIG_FILE_NAME) as file:
+    with open(config_path) as file:
         config = yaml.safe_load(file)
 
     with open(PARAM_MAP_FILE_NAME) as file:
@@ -69,9 +67,11 @@ def run_met(client, dataset=None):
         logger.info("Loaded combined dataset")
 
         # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
-        dataset = dataset.sel(time=slice("1950-01-01 00:00:00", "1950-01-01 23:59:59"), drop=True)
+        dataset = dataset.sel(time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True)
         logger.debug(dataset)
         logger.debug(dataset.chunks)
+        
+    tic = time.perf_counter()
 
     # 1. Rename parameters
     param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
@@ -111,11 +111,9 @@ def run_met(client, dataset=None):
         else:
             logger.info(f"Standard Stage: Skipping {param}")
 
-    dataset = dataset.compute()
-
     # 4. Doing all possible calculations (Params)
     ## For strict ordering, resulting graph must be DAGs
-    ## Can used memoisation + greedy approach
+    ## Can use memoisation + greedy approach
     dep_list = generate_calculations(dataset, param_map)
 
     for param, deps, func in dep_list:
@@ -155,5 +153,8 @@ def run_met(client, dataset=None):
         dataset[var].to_netcdf(f"{config['output_file']}_{var}.nc", format="NETCDF4", engine="h5netcdf")
 
     logger.info("Saved dataset - Check log.txt for warnings")
+    
+    toc = time.perf_counter()
+    print(f"Completed in {toc - tic:0.4f} seconds")
 
     return dataset
