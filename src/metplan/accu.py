@@ -15,8 +15,7 @@ def daily_to_hourly_acc(da: DataArray) -> DataArray:
 
     # Internally, TimeStamp is being converted to datetime64
     # on groupby if timestamp is 00:00:00.
-    diff_da['time'] = pd.DatetimeIndex(diff_da['time'].values)
-
+    diff_da["time"] = pd.DatetimeIndex(diff_da["time"].values)
 
     diff_da.attrs["units"] = f"{diff_da.attrs['units']} hr**-1"
     return diff_da

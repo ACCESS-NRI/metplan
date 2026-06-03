@@ -3,7 +3,6 @@ from metpy.xarray import preprocess_and_wrap
 import metpy.constants as c
 import xarray as xr
 
-
 # REVIEW: Metpy has recently added triple point as well (c.T0)
 T0 = units.Quantity(273.16, "kelvin")
 
@@ -48,6 +47,4 @@ def default_co2(coords, dims):
     commit: b8596c6143cce23d5d312a2070403fc949814e1d
     location: src/offline#cable.nml#L32
     """
-    return xr.DataArray(
-        350 / 1000000, coords=coords, dims=dims, attrs={"units": "ppm"}
-    )
+    return xr.DataArray(350 / 1000000, coords=coords, dims=dims, attrs={"units": "ppm"})

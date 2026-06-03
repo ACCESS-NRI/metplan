@@ -9,6 +9,7 @@ TEST_PARAM_MAP_FILE = "tests/data/test_param_map.yaml"
 # TODO: Similar for leap year
 # TODO: Trusted short script for vpd / calc
 
+
 @pytest.fixture(scope="module")
 def sample_xarray_data():
     lon = [-99, -98.75]
@@ -28,13 +29,17 @@ def sample_xarray_data():
     reference_time = pd.Timestamp("2014-09-05")
     ds = xr.Dataset(
         data_vars=dict(
-            ssrd=(["lon", "lat", "time"], shortwave_rad, {"units": "J m**-2"}), #SWDown
-            strd=(["lon", "lat", "time"], longwave_rad, {"units": "J m**-2"}), #LWDown
-            t2m=(["lon", "lat", "time"], temperature, {"units": "K"}), #Tair
-            tp=(["lon", "lat", "time"], rain, {"units": "mm"}), #Rainf
-            u10=(["lon", "lat", "time"], wind_u, {"units": "m s**-1"}), #Wind
-            v10=(["lon", "lat", "time"], wind_v, {"units": "m s**-1"}), #Wind
-            sp=(["lon", "lat", "time"], surf_pressure, {"units": "Pa"}), #PSurf
+            ssrd=(
+                ["lon", "lat", "time"],
+                shortwave_rad,
+                {"units": "J m**-2"},
+            ),  # SWDown
+            strd=(["lon", "lat", "time"], longwave_rad, {"units": "J m**-2"}),  # LWDown
+            t2m=(["lon", "lat", "time"], temperature, {"units": "K"}),  # Tair
+            tp=(["lon", "lat", "time"], rain, {"units": "mm"}),  # Rainf
+            u10=(["lon", "lat", "time"], wind_u, {"units": "m s**-1"}),  # Wind
+            v10=(["lon", "lat", "time"], wind_v, {"units": "m s**-1"}),  # Wind
+            sp=(["lon", "lat", "time"], surf_pressure, {"units": "Pa"}),  # PSurf
         ),
         coords=dict(
             lon=lon,
@@ -47,11 +52,8 @@ def sample_xarray_data():
     return ds
 
 
-
-
 @pytest.fixture(scope="module")
 def param_map():
     with open(TEST_PARAM_MAP_FILE) as file:
         param_map = yaml.safe_load(file)
     return param_map
-

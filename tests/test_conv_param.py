@@ -1,13 +1,9 @@
 import pytest
-import numpy as np
 import pandas as pd
 import xarray as xr
-from metpy.units import units
 
 from metplan.standard_param import (
     vp_vpd_tair_sh,
-    vp_tair_sh,
-    vpd_tair_sh,
     sp_dewp_sh,
     wind_speed,
 )
@@ -149,10 +145,10 @@ class TestWindSpeed:
     @pytest.mark.parametrize(
         "east,north,expected",
         [
-            (0, 0, 0),      # no wind
-            (5, 0, 5),      # easterly only
-            (0, 5, 5),      # northerly only
-            (3, 4, 5),      # 3-4-5 triangle
+            (0, 0, 0),  # no wind
+            (5, 0, 5),  # easterly only
+            (0, 5, 5),  # northerly only
+            (3, 4, 5),  # 3-4-5 triangle
         ],
     )
     def test_wind_speed_various_components(self, east, north, expected):
@@ -169,5 +165,6 @@ class TestWindSpeed:
         print("Given north", north)
         result = wind_speed(wind_e, wind_n)
 
-        assert float(result.metpy.dequantify().values[0]) == pytest.approx(expected, rel=1e-2)
-
+        assert float(result.metpy.dequantify().values[0]) == pytest.approx(
+            expected, rel=1e-2
+        )
