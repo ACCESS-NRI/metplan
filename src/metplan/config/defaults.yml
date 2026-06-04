@@ -22,5 +22,4 @@ cluster_local:
   n_workers: 1
 
 # Outputs
-output_dir: /scratch/{{PROJECT}}/{{USER}}/metplan
-output_file: /scratch/{{PROJECT}}/{{USER}}/metplan/out.nc
+output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan

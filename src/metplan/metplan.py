@@ -8,6 +8,7 @@ import metplan.utils as mu
 from metplan.utils.logger import get_logger
 from metplan.accu import daily_to_hourly_acc
 from metplan.dependency import generate_calculations
+from hpcpy.utilities import interpolate_string_template
 import os
 import time
 
@@ -42,11 +43,11 @@ with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
 
 
-def run_met(config_path, dataset=None):
+def run_met(config, dataset=None):
     """Run preprocessor for meteorological forcing dataset(s)."""
 
     # Load the configuration
-    config = mu.load_config(config_path)
+    # config = mu.load_config(config_path)
 
     with open(PARAM_MAP_FILE_NAME) as file:
         param_map = yaml.safe_load(file)
@@ -152,10 +153,13 @@ def run_met(config_path, dataset=None):
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
     for var in dataset.data_vars:
+
+        output_filename = config.get("output_dir") + f"/{var}.nc"
+
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(config.get("encoding"))
         dataset[var].to_netcdf(
-            f"{config['output_file']}_{var}.nc", **config.get("to_netcdf")
+            output_filename, **config.get("to_netcdf")
         )
 
     logger.info("Saved dataset - Check log.txt for warnings")
