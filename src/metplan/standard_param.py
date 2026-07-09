@@ -25,10 +25,12 @@ def vpd_tair_sh(vpd, tair):
     vp = svp - vpd
     return _calc_sh(vp, svp, tair)
 
+
 @preprocess_and_wrap(wrap_like="dewp", broadcast=("sp", "dewp"))
 @check_units("[pressure]", "[temperature]")
 def sp_dewp_sh(sp, dewp):
     return mpcalc.specific_humidity_from_dewpoint(sp, dewp)
+
 
 @preprocess_and_wrap(wrap_like="wind_e", broadcast=("wind_e", "wind_n"))
 @check_units("[speed]", "[speed]")
@@ -39,7 +41,7 @@ def wind_speed(wind_e, wind_n):
 def _calc_sh(vp, svp, tair):
     relative_humidity = (vp / svp).to("dimensionless")
     mixing_ratio = mpcalc.mixing_ratio_from_relative_humidity(
-        vp, tair, relative_humidity, phase='auto'
+        vp, tair, relative_humidity, phase="auto"
     )
     specific_humidity = mpcalc.specific_humidity_from_mixing_ratio(mixing_ratio)
 

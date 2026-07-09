@@ -6,5 +6,5 @@ Top-level package for metplan.
 """
 
 __author__ = "ACCESS-NRI and contributors"
-__email__ = 'abhaas.goyal@anu.edu.au'
-__version__ = '0.0.1'
+__email__ = "abhaas.goyal@anu.edu.au"
+__version__ = "0.0.1"

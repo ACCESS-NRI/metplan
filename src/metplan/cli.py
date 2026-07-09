@@ -1,6 +1,8 @@
 """Console script for metplan."""
+
 import argparse
 import metplan
+
 
 def generate_parser(app) -> argparse.ArgumentParser:
     """Returns the instance of `argparse.ArgumentParser` used for `metplan`."""
@@ -61,6 +63,7 @@ def generate_parser(app) -> argparse.ArgumentParser:
     parser_run.set_defaults(func=app)
 
     return main_parser
+
 
 if __name__ == "__main__":
     app()

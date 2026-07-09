@@ -23,7 +23,7 @@ class TestDailyToHourlyAcc:
             attrs={"units": "mm"},
         )
         return data
-    
+
     # TODO: Multiday data
 
     def test_daily_to_hourly_acc(self, single_day_data):
@@ -32,12 +32,12 @@ class TestDailyToHourlyAcc:
 
         assert (result.values == np.arange(1, 25)).all()
         assert type(result) is not None
-        assert result.attrs == {"units" : "mm hr**-1"}
+        assert result.attrs == {"units": "mm hr**-1"}
 
     def test_preserve_attribute(self, single_day_data):
         """Test basic daily to hourly accumulation conversion."""
-        single_day_data.attrs = {"long_name": "RainFall", "units" : "mm"}
+        single_day_data.attrs = {"long_name": "RainFall", "units": "mm"}
         result = daily_to_hourly_acc(single_day_data)
-        expected_attrs = {"long_name": "RainFall", "units" : "mm hr**-1"}
+        expected_attrs = {"long_name": "RainFall", "units": "mm hr**-1"}
 
         assert result.attrs == expected_attrs

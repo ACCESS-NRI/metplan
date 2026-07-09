@@ -271,4 +271,3 @@ def test_order_load_dep_integration(test_params, test_all_deps, test_ord_deps):
     result = order_load_dep([], test_all_deps, test_params)
 
     assert isinstance(result, list)
-

@@ -10,10 +10,7 @@ def process_dependencies(param_map):
     for param, param_info in param_map.items():
         ans = []
         for pi_calc in param_info.get("calc", []):
-            param_type = {
-                "standard" : standard_param,
-                "optional" : opt_param
-            }
+            param_type = {"standard": standard_param, "optional": opt_param}
             try:
                 func = getattr(param_type[param_info["type"]], pi_calc["func"])
             except KeyError:
@@ -24,7 +21,6 @@ def process_dependencies(param_map):
         dependencies[param] = ans
 
     return dependencies
-
 
 
 def cycle_check(node: str, visited: dict[str, bool], adj_list: dict[str, list[str]]):
