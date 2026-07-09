@@ -60,16 +60,20 @@ def run_met(config_path, dataset=None):
         file_list = []
         for dir in config.get("directories"):
             file_list += list_nc_files(dir)
-
+        
         ## TODO: Look more into parameter options for open_mfdataset
         logger.info("Loading combined dataset")
-        dataset = xr.open_mfdataset(file_list, compat="override", coords="minimal", chunks={"latitude": 360}, engine="h5netcdf")
+        dataset = xr.open_mfdataset(file_list, compat="override", coords="minimal", chunks={"time": 24, "longitude": -1, "latitude": -1}, engine="h5netcdf", parallel=True)
         logger.info("Loaded combined dataset")
 
+        
+
         # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
-        dataset = dataset.sel(time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True)
+        # dataset = dataset.sel(time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True)
+        logger.debug(dataset.chunksizes)
         logger.debug(dataset)
         logger.debug(dataset.chunks)
+        # sys.exit(1)
         
     tic = time.perf_counter()
 
@@ -115,6 +119,7 @@ def run_met(config_path, dataset=None):
     ## For strict ordering, resulting graph must be DAGs
     ## Can use memoisation + greedy approach
     dep_list = generate_calculations(dataset, param_map)
+    
 
     for param, deps, func in dep_list:
         if deps == []:
@@ -143,14 +148,19 @@ def run_met(config_path, dataset=None):
     )
 
     # Combine filtered params
-    compression_dict = {"zlib": True, "complevel": 5, "shuffle": True, "dtype": "float64"}
+    compression_dict = {"zlib": True, "complevel": 1, "shuffle": True, "dtype": "float64"}
 
     logger.info("Saving dataset")
     logger.debug(dataset)
     for var in dataset.data_vars:
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(compression_dict)
-        dataset[var].to_netcdf(f"{config['output_file']}_{var}.nc", format="NETCDF4", engine="h5netcdf")
+        # dataset[var].to_netcdf(f"{config['output_file']}_{var}.nc", format="NETCDF4", engine="h5netcdf")
+
+        test_path = os.environ['PBS_JOBFS'] + f"/{var}.nc" 
+        print(test_path)
+        dataset[var].to_netcdf(test_path, format="NETCDF4", engine="h5netcdf")
+        break
 
     logger.info("Saved dataset - Check log.txt for warnings")
     

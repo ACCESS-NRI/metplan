@@ -66,10 +66,10 @@ def main():
         else:
             # client, cluster = my_start_PBS_dask_cluster()
             logger.debug("Running on PBS")
-            cluster = LocalCluster(n_workers=6,
-                                    threads_per_worker=4,
+            cluster = LocalCluster(n_workers=1,
+                                    # threads_per_worker=4,
             processes=True, 
-            memory_limit = int(os.environ['PBS_VMEM']), # / int(os.environ['PBS_NCPUS']), 
+            # memory_limit = int(os.environ['PBS_VMEM']), # / int(os.environ['PBS_NCPUS']), 
             local_directory = os.path.join(os.environ['PBS_JOBFS'], 'dask-worker-space'))
             client = Client(cluster)
 
