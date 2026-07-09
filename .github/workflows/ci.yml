@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Setup conda environment
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
         with:
             miniconda-version: "latest"
             python-version: ${{ matrix.python-version }}
@@ -40,7 +40,7 @@ jobs:
         run: coverage xml
 
       - name: Upload code coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe
         with:
           token:  ${{ secrets.codecov_token }} 
           files: ./coverage.xml
