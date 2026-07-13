@@ -53,18 +53,22 @@ def run_met(config, dataset=None):
         param_map = yaml.safe_load(file)
 
     if dataset is None:
-
         ## REVIEW: Have validator like cerberus
         file_list = []
         for dir in config.get("directories"):
             file_list += list_nc_files(dir)
-        
+
         ## TODO: Look more into parameter options for open_mfdataset
         logger.info("Loading combined dataset")
-        dataset = xr.open_mfdataset(file_list, compat="override", coords="minimal", chunks={"time": 24, "longitude": -1, "latitude": -1}, engine="h5netcdf", parallel=True)
+        dataset = xr.open_mfdataset(
+            file_list,
+            compat="override",
+            coords="minimal",
+            chunks={"time": 24, "longitude": -1, "latitude": -1},
+            engine="h5netcdf",
+            parallel=True,
+        )
         logger.info("Loaded combined dataset")
-
-        
 
         # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
         dataset = dataset.sel(
@@ -116,7 +120,6 @@ def run_met(config, dataset=None):
     ## For strict ordering, resulting graph must be DAGs
     ## Can use memoisation + greedy approach
     dep_list = generate_calculations(dataset, param_map)
-    
 
     for param, deps, func in dep_list:
         if deps == []:
@@ -136,15 +139,13 @@ def run_met(config, dataset=None):
     dataset = dataset.drop_vars(
         list(
             filter(
-                lambda x: param_map.get(x, {}).get("type", "")
-                not in ["standard", "optional"],
+                lambda x: (
+                    param_map.get(x, {}).get("type", "") not in ["standard", "optional"]
+                ),
                 list(dataset.keys()),
             )
         )
     )
-
-    # Combine filtered params
-    compression_dict = {"zlib": True, "complevel": 1, "shuffle": True, "dtype": "float64"}
 
     logger.info("Saving dataset")
     logger.debug(dataset)
@@ -153,14 +154,11 @@ def run_met(config, dataset=None):
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
     for var in dataset.data_vars:
-
         output_filename = config.get("output_dir") + f"/{var}.nc"
 
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(config.get("encoding"))
-        dataset[var].to_netcdf(
-            output_filename, **config.get("to_netcdf")
-        )
+        dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
     logger.info("Saved dataset - Check log.txt for warnings")
 

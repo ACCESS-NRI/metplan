@@ -98,7 +98,6 @@ def main():
         logger.info(f"Diagnostics: {client.dashboard_link}")
 
         parse_and_dispatch(parser, run_met)
-        # run_met()
     finally:
         cluster.close()
         client.close()
