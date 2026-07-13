@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 def get_logger(name="metplan", level="debug"):
     """Get a logger instance.
 

@@ -4,14 +4,12 @@ import yaml
 import xarray as xr
 from metplan.unit_conv import UnitConversion
 from metplan.utils.files import list_nc_files
+import metplan.utils as mu
 from metplan.utils.logger import get_logger
 from metplan.accu import daily_to_hourly_acc
 from metplan.dependency import generate_calculations
-from dask.distributed import LocalCluster, Client
-from dask import delayed
-from dask_jobqueue import PBSCluster
+from hpcpy.utilities import interpolate_string_template
 import os
-import sys
 import time
 
 xr.set_options(keep_attrs=True)
@@ -19,7 +17,7 @@ logger = get_logger()
 
 OUTPUT_FILE_FORMAT = "NETCDF4"
 CONFIG_FILE_NAME = "config.yaml"
-PARAM_MAP_FILE_NAME = "param_map.yaml"
+PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
 
 
 def get_rename_param_criteria(params, param_map):
@@ -45,11 +43,11 @@ with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
 
 
-def run_met(config_path, dataset=None):
+def run_met(config, dataset=None):
     """Run preprocessor for meteorological forcing dataset(s)."""
 
-    with open(config_path) as file:
-        config = yaml.safe_load(file)
+    # Load the configuration
+    # config = mu.load_config(config_path)
 
     with open(PARAM_MAP_FILE_NAME) as file:
         param_map = yaml.safe_load(file)
@@ -69,12 +67,12 @@ def run_met(config_path, dataset=None):
         
 
         # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
-        # dataset = dataset.sel(time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True)
-        logger.debug(dataset.chunksizes)
+        dataset = dataset.sel(
+            time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True
+        )
         logger.debug(dataset)
         logger.debug(dataset.chunks)
-        # sys.exit(1)
-        
+
     tic = time.perf_counter()
 
     # 1. Rename parameters
@@ -82,7 +80,7 @@ def run_met(config_path, dataset=None):
     dataset = dataset.rename(param_criteria)
 
     # 1: Segregate by year/var
-    # for var in dataset.data_vars: 
+    # for var in dataset.data_vars:
     #     var_output_dir = f"{config.get('output_directory')}/{var}"
     #     try:
     #         shutil.rmtree(config.get("output_directory"))
@@ -104,7 +102,6 @@ def run_met(config_path, dataset=None):
     ## List of all params for unit conversions
     params = get_unit_conv_params(param_map)
     param_conv = UnitConversion(params)
-
 
     for param in params:
         if dataset.get(param) is not None:
@@ -133,7 +130,6 @@ def run_met(config_path, dataset=None):
         dataset[param] = param_conv.convert_param(
             dataset[param], param_map[param]["unit"]
         )
-    
 
     # sys.exit()
     # Only keep standard/optional variables (not including index variables)
@@ -152,18 +148,22 @@ def run_met(config_path, dataset=None):
 
     logger.info("Saving dataset")
     logger.debug(dataset)
-    for var in dataset.data_vars:
-        logger.debug(f"Saving var: {var}")
-        dataset[var].encoding.update(compression_dict)
-        # dataset[var].to_netcdf(f"{config['output_file']}_{var}.nc", format="NETCDF4", engine="h5netcdf")
 
-        test_path = os.environ['PBS_JOBFS'] + f"/{var}.nc" 
-        print(test_path)
-        dataset[var].to_netcdf(test_path, format="NETCDF4", engine="h5netcdf")
-        break
+    # Ensure that the output directory exists
+    os.makedirs(config.get("output_dir"), exist_ok=True)
+
+    for var in dataset.data_vars:
+
+        output_filename = config.get("output_dir") + f"/{var}.nc"
+
+        logger.debug(f"Saving var: {var}")
+        dataset[var].encoding.update(config.get("encoding"))
+        dataset[var].to_netcdf(
+            output_filename, **config.get("to_netcdf")
+        )
 
     logger.info("Saved dataset - Check log.txt for warnings")
-    
+
     toc = time.perf_counter()
     print(f"Completed in {toc - tic:0.4f} seconds")
 

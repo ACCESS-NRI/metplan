@@ -1,8 +1,6 @@
 import pytest
-import numpy as np
 import pandas as pd
 import xarray as xr
-from metpy.units import units
 
 from metplan.opt_param import (
     calc_lwdown_swinbank,
@@ -158,7 +156,7 @@ class TestCalcSnow:
 
         # Below 0°C (273.15K) should have snow
         assert result[0] > 0
-        assert result.values[1] == 10 
+        assert result.values[1] == 10
 
     def test_calc_snow_above_freezing(self, temp_rain_data):
         """Test that snowfall is zero above freezing point."""
@@ -183,8 +181,8 @@ class TestCalcSnow:
     @pytest.mark.parametrize(
         "temp_value,expected_snow",
         [
-            (253.15, True),   # -20°C -> snow
-            (263.15, True),   # -10°C -> snow
+            (253.15, True),  # -20°C -> snow
+            (263.15, True),  # -10°C -> snow
             (273.15, True),  # 0°C -> snow (threshold)
             (283.15, False),  # 10°C -> no snow
             (293.15, False),  # 20°C -> no snow

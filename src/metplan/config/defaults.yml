@@ -1,0 +1,25 @@
+# Encoding
+encoding:
+  zlib: true
+  complevel: 5
+  shuffle: true
+  dtype: float64
+
+# Write arguments
+to_netcdf:
+  format: NETCDF4
+  engine: h5netcdf
+
+# Cluster settings for running on PBS (NCI)
+cluster_pbs:
+  n_workers: 6
+  threads_per_worker: 4
+  memory_limit: 4GB
+  processes: true
+
+# Cluster settings for running locally
+cluster_local:
+  n_workers: 1
+
+# Outputs
+output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan
