@@ -1,0 +1,25 @@
+name: metplan_dev
+
+channels:
+  - conda-forge
+  - accessnri
+  - coecms
+  - nodefaults
+
+dependencies:
+    - coverage>=7.0.0
+    - dask
+    - h5netcdf
+    - hpcpy
+    - metpy
+    - mypy>=1.15
+    - pint
+    - pip>=24.0
+    - pytest>=6.2.4
+    - python>=3.10
+    - ruff>=0.9
+    - sphinx>=8.0
+    - tox>=4.0
+    - xarray
+    - pip:
+      - codecov

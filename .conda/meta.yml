@@ -21,23 +21,13 @@ requirements:
     - pip
     - versioneer
   run:
-    # Dependencies
-    - xarray
+    - dask
+    - h5netcdf
+    - hpcpy
+    - metpy
     - pint
-    # Dev Dependencies
     - python>=3.10
-    - pip>=24.0
-    - wheel==0.33.6
-    - watchdog==0.9.0
-    - tox>=4.0
-    - coverage>=7.0.0
-    - sphinx>=8.0
-    - twine>=6.0.0
-    - ruff>=0.9
-    - mypy>=1.15
-    - pytest==6.2.4
-    - pip:
-      - codecov
+    - xarray
 
 about:
   home: https://github.com/ACCESS-NRI/metplan
