@@ -12,9 +12,9 @@ to_netcdf:
 
 # Cluster settings for running on PBS (NCI)
 cluster_pbs:
-  n_workers: 6
-  threads_per_worker: 4
-  memory_limit: 4GB
+  n_workers: 1
+  # threads_per_worker: 4
+  # memory_limit: 4GB
   processes: true
 
 # Cluster settings for running locally
