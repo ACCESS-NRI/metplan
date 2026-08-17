@@ -58,8 +58,8 @@ def parse_and_dispatch(parser, app):
     """
     args = vars(parser.parse_args(sys.argv[1:] if sys.argv[1:] else ["-h"]))
 
-    # Remove the verbose argument
     _ = args.pop("verbose")
+    _ = args.pop("all")
 
     func = args.pop("func")
     func(**args)

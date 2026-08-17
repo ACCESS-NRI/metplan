@@ -62,8 +62,19 @@ def generate_parser(app) -> argparse.ArgumentParser:
     )
     parser_run.set_defaults(func=app)
 
+    # Require either a single variable or --all, but not both.
+    group_run = parser_run.add_mutually_exclusive_group(required=True)
+    group_run.add_argument(
+        "var",
+        nargs="?",
+        default=None,
+        help="Name of the variable to process.",
+    )
+    group_run.add_argument(
+        "--all",
+        dest="all",
+        action="store_true",
+        help="Process all variables instead of specifying one.",
+    )
+
     return main_parser
-
-
-if __name__ == "__main__":
-    app()

@@ -9,6 +9,10 @@ from metplan.utils.logger import get_logger
 from metplan.accu import daily_to_hourly_acc
 from metplan.dependency import generate_calculations
 from hpcpy.utilities import interpolate_string_template
+from hpcpy import get_client
+import operator
+import shutil
+import sys
 import os
 import time
 
@@ -16,8 +20,15 @@ xr.set_options(keep_attrs=True)
 logger = get_logger()
 
 OUTPUT_FILE_FORMAT = "NETCDF4"
-CONFIG_FILE_NAME = "config.yaml"
 PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
+
+
+METPLAN_PBS_PARAMS = dict(
+    mem="80G",
+    walltime="01:00:00",
+    storage=["gdata/xp65", "gdata/tm70"],
+    ncpus=16
+)
 
 
 def get_rename_param_criteria(params, param_map):
@@ -38,50 +49,89 @@ def get_unit_conv_params(param_map):
         if param_attrs.get("unit") is not None
     ]
 
+def get_var_dependencies(dep_list, dataset):
+    var_list = list(map(operator.itemgetter(0), dep_list))
+    variables = set(var_list).union(dataset.data_vars)
+    return [
+        var for var in variables
+        if param_map.get(var, {}).get("type") in ("standard", "optional")
+    ]
 
 with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
 
 
-def run_met(config, dataset=None):
+def load_dataset(config):
+    ## REVIEW: Have validator like cerberus
+    file_list = []
+    for dir in config.get("directories"):
+        file_list += list_nc_files(dir)
+
+    ## TODO: Look more into parameter options for open_mfdataset
+    logger.info("Loading combined dataset")
+    dataset = xr.open_mfdataset(
+        file_list,
+        compat="override",
+        coords="minimal",
+        chunks={"latitude": 360},
+        engine="h5netcdf",
+    )
+    logger.info("Loaded combined dataset")
+
+    # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
+    dataset = dataset.sel(
+        time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True
+    )
+    logger.debug(dataset)
+    logger.debug(dataset.chunks)
+    return dataset
+
+
+def run_met(config_path, var=None, dataset=None):
     """Run preprocessor for meteorological forcing dataset(s)."""
 
     # Load the configuration
-    # config = mu.load_config(config_path)
+    config = mu.load_config(config_path)
+    print(f"var is passed {var}")
 
     with open(PARAM_MAP_FILE_NAME) as file:
         param_map = yaml.safe_load(file)
 
     if dataset is None:
-
-        ## REVIEW: Have validator like cerberus
-        file_list = []
-        for dir in config.get("directories"):
-            file_list += list_nc_files(dir)
-
-        ## TODO: Look more into parameter options for open_mfdataset
-        logger.info("Loading combined dataset")
-        dataset = xr.open_mfdataset(
-            file_list,
-            compat="override",
-            coords="minimal",
-            chunks={"latitude": 360},
-            engine="h5netcdf",
-        )
-        logger.info("Loaded combined dataset")
-
-        # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
-        dataset = dataset.sel(
-            time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True
-        )
-        logger.debug(dataset)
-        logger.debug(dataset.chunks)
+        dataset = load_dataset(config)
 
     tic = time.perf_counter()
 
     # 1. Rename parameters
     param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
     dataset = dataset.rename(param_criteria)
+
+    dep_list = generate_calculations(dataset, param_map)
+
+    if var is None:
+        var_list = get_var_dependencies(dep_list, dataset)
+        for metplan_var in var_list:
+            client = get_client()
+            metplan_path = shutil.which(sys.argv[0])
+            metplan_jobid = client.submit(
+                mu.get_installed_root() / "data" / "pbs_jobscript.j2",
+                render = True,
+                dry_run=False,
+                # Interpolated parameters
+                metplan_path = metplan_path,
+                metplan_var = metplan_var,
+                mem = METPLAN_PBS_PARAMS["mem"],
+                walltime = METPLAN_PBS_PARAMS["walltime"],
+                storage = METPLAN_PBS_PARAMS["storage"],
+                ncpus=METPLAN_PBS_PARAMS["ncpus"],
+                project = config["project"],
+
+            )
+            logger.info(f"Upload job submitted: {metplan_jobid}")
+        print("Successfully submitted jobs")
+        sys.exit(0)
+    else:
+        pass
 
     # 1: Segregate by year/var
     # for var in dataset.data_vars:
@@ -119,7 +169,6 @@ def run_met(config, dataset=None):
     # 4. Doing all possible calculations (Params)
     ## For strict ordering, resulting graph must be DAGs
     ## Can use memoisation + greedy approach
-    dep_list = generate_calculations(dataset, param_map)
 
     for param, deps, func in dep_list:
         if deps == []:
@@ -139,8 +188,9 @@ def run_met(config, dataset=None):
     dataset = dataset.drop_vars(
         list(
             filter(
-                lambda x: param_map.get(x, {}).get("type", "")
-                not in ["standard", "optional"],
+                lambda x: (
+                    param_map.get(x, {}).get("type", "") not in ["standard", "optional"]
+                ),
                 list(dataset.keys()),
             )
         )
@@ -153,14 +203,11 @@ def run_met(config, dataset=None):
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
     for var in dataset.data_vars:
-
         output_filename = config.get("output_dir") + f"/{var}.nc"
 
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(config.get("encoding"))
-        dataset[var].to_netcdf(
-            output_filename, **config.get("to_netcdf")
-        )
+        dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
     logger.info("Saved dataset - Check log.txt for warnings")
 

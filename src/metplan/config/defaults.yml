@@ -1,3 +1,6 @@
+# Gadi Project
+project: tm70
+
 # Encoding
 encoding:
   zlib: true
