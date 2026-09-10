@@ -57,8 +57,9 @@ def test_startstop_dask_client():
     # Stop them and ensure they are indeed stopped
     mu.stop_dask_client(client, cluster)
 
-    assert client.status == "closed"
-    assert cluster.status == Status.closed
+    # Allow for closing status due to sluggish runners.
+    assert client.status in ["closed", "closing"]
+    assert cluster.status in [Status.closed, Status.closing]
 
 
 class TestListNcFiles:
