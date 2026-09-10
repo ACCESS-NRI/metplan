@@ -1,9 +1,13 @@
-from pathlib import Path
+import copy
 import os
 from importlib import resources
+from pathlib import Path
+
 import yaml
-import copy
+from distributed import Client, LocalCluster
 from hpcpy.utilities import interpolate_string_template
+
+from metplan.utils.logger import get_logger
 
 
 def get_installed_root() -> Path:
@@ -82,3 +86,57 @@ def load_config(user_config=None) -> dict:
             config = deep_update(config, _config)
 
     return config
+
+
+def start_dask_client(config: dict) -> tuple[Client, LocalCluster]:
+    """Start a dask client for processing
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary which includes cluster_local and cluster_pbs keys.
+
+    Returns
+    -------
+    tuple[Client, LocalCluster]
+        Client and cluster objects.
+    """
+    logger = get_logger()
+    logger.debug("Starting cluster")
+
+    if os.environ.get("PBS_JOBFS") is None:
+        logger.debug("No JOBFS detected, starting LocalCluster")
+        cluster = LocalCluster(**config.get("cluster_local"))
+    else:
+        logger.debug("JOBFS detected, starting LocalCluster within HPC job")
+        cluster = LocalCluster(
+            memory_limit=int(os.environ["PBS_VMEM"]),
+            local_directory=os.path.join(os.environ["PBS_JOBFS"], "dask-worker-space"),
+            **config.get("cluster_pbs"),
+        )
+
+    logger.debug("Assigning client to cluster")
+    client = Client(cluster)
+
+    logger.debug("Starting active memory management1")
+    client.amm.start()
+
+    logger.info(f"Diagnostics: {client.dashboard_link}")
+    return client, cluster
+
+
+def stop_dask_client(client: Client, cluster: LocalCluster = None):
+    """Stop the dask client and cluster.
+
+    Parameters
+    ----------
+    client : Client
+        Client object.
+    cluster : LocalCluster, optional
+        LocalCluster object, omit if leaving active, by default None
+    """
+    client.close()
+
+    # Optionally stop the cluster
+    if isinstance(cluster, LocalCluster):
+        cluster.close()

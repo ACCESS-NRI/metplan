@@ -1,6 +1,6 @@
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 import xarray as xr
 
 from metplan.accu import daily_to_hourly_acc

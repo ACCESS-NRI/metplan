@@ -2,9 +2,10 @@ import os
 import tempfile
 from pathlib import Path
 
+from distributed import Client, LocalCluster, Status
 
-from metplan.utils.files import list_nc_files
 import metplan.utils as mu
+from metplan.utils.files import list_nc_files
 
 
 def test_deep_update():
@@ -30,7 +31,6 @@ def test_load_config_env():
 
 def test_load_config_user():
     """Test load_config with user overrides."""
-
     # Create a temp dir
     with tempfile.TemporaryDirectory() as td:
 
@@ -45,6 +45,20 @@ def test_load_config_user():
 
         # Ensure it replaced the internal defaults
         assert config.get("output_dir") == "TEST"
+
+
+def test_startstop_dask_client():
+    """Test start_dask_client"""
+    # Start the client and cluster
+    client, cluster = mu.start_dask_client(mu.load_config())
+    assert isinstance(client, Client)
+    assert isinstance(cluster, LocalCluster)
+
+    # Stop them and ensure they are indeed stopped
+    mu.stop_dask_client(client, cluster)
+
+    assert client.status == "closed"
+    assert cluster.status == Status.closed
 
 
 class TestListNcFiles:

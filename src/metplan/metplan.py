@@ -1,16 +1,18 @@
 """Main module."""
 
-import yaml
-import xarray as xr
-from metplan.unit_conv import UnitConversion
-from metplan.utils.files import list_nc_files
-import metplan.utils as mu
-from metplan.utils.logger import get_logger
-from metplan.accu import daily_to_hourly_acc
-from metplan.dependency import generate_calculations
-from hpcpy.utilities import interpolate_string_template
 import os
 import time
+
+import xarray as xr
+import yaml
+from hpcpy.utilities import interpolate_string_template
+
+import metplan.utils as mu
+from metplan.accu import daily_to_hourly_acc
+from metplan.dependency import generate_calculations
+from metplan.unit_conv import UnitConversion
+from metplan.utils.files import list_nc_files
+from metplan.utils.logger import get_logger
 
 xr.set_options(keep_attrs=True)
 logger = get_logger()
