@@ -98,7 +98,6 @@ def main():
         logger.info(f"Diagnostics: {client.dashboard_link}")
 
         parse_and_dispatch(parser, run_met)
-        # run_met()
     finally:
         cluster.close()
         client.close()
@@ -107,7 +106,6 @@ def main():
     # TODO: Dask LocalCluster
     # TODO: Weather Generator
     # TODO: Temporal / Spatial resolution - Reference gridinfo - maximum types of datasets to support (3 is ideal). Warn if more than 2
-    # TODO: CLI
 
 
 # https://github.com/AusClimateService/axiom

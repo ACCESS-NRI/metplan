@@ -73,6 +73,14 @@ def load_dataset(config):
         file_list,
         compat="override",
         coords="minimal",
+        chunks={"time": 24, "longitude": -1, "latitude": -1},
+        engine="h5netcdf",
+        parallel=True,
+    )
+    dataset = xr.open_mfdataset(
+        file_list,
+        compat="override",
+        coords="minimal",
         chunks={"latitude": 360},
         engine="h5netcdf",
     )
