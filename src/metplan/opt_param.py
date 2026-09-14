@@ -1,7 +1,7 @@
-from metpy.units import units, check_units
-from metpy.xarray import preprocess_and_wrap
 import metpy.constants as c
 import xarray as xr
+from metpy.units import check_units, units
+from metpy.xarray import preprocess_and_wrap
 
 # REVIEW: Metpy has recently added triple point as well (c.T0)
 T0 = units.Quantity(273.16, "kelvin")
