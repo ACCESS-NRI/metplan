@@ -1,6 +1,7 @@
-import metplan.standard_param as standard_param
-import metplan.opt_param as opt_param
 import itertools
+
+import metplan.opt_param as opt_param
+import metplan.standard_param as standard_param
 
 
 def process_dependencies(param_map):

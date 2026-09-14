@@ -1,7 +1,7 @@
 import pint
+from metpy.units import units
 from pint import Unit
 from xarray import DataArray
-from metpy.units import units
 
 
 def rain_conversion(units: Unit, depth_time: Unit):

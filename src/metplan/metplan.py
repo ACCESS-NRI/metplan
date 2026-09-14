@@ -1,16 +1,18 @@
 """Main module."""
 
-import yaml
-import xarray as xr
-from metplan.unit_conv import UnitConversion
-from metplan.utils.files import list_nc_files
-import metplan.utils as mu
-from metplan.utils.logger import get_logger
-from metplan.accu import daily_to_hourly_acc
-from metplan.dependency import generate_calculations
-from hpcpy.utilities import interpolate_string_template
 import os
 import time
+
+import xarray as xr
+import yaml
+from hpcpy.utilities import interpolate_string_template
+
+import metplan.utils as mu
+from metplan.accu import daily_to_hourly_acc
+from metplan.dependency import generate_calculations
+from metplan.unit_conv import UnitConversion
+from metplan.utils.files import list_nc_files
+from metplan.utils.logger import get_logger
 
 xr.set_options(keep_attrs=True)
 logger = get_logger()
@@ -53,7 +55,6 @@ def run_met(config, dataset=None):
         param_map = yaml.safe_load(file)
 
     if dataset is None:
-
         ## REVIEW: Have validator like cerberus
         file_list = []
         for dir in config.get("directories"):
@@ -65,8 +66,9 @@ def run_met(config, dataset=None):
             file_list,
             compat="override",
             coords="minimal",
-            chunks={"latitude": 360},
+            chunks={"time": 24, "longitude": -1, "latitude": -1},
             engine="h5netcdf",
+            parallel=True,
         )
         logger.info("Loaded combined dataset")
 
@@ -139,8 +141,9 @@ def run_met(config, dataset=None):
     dataset = dataset.drop_vars(
         list(
             filter(
-                lambda x: param_map.get(x, {}).get("type", "")
-                not in ["standard", "optional"],
+                lambda x: (
+                    param_map.get(x, {}).get("type", "") not in ["standard", "optional"]
+                ),
                 list(dataset.keys()),
             )
         )
@@ -153,14 +156,11 @@ def run_met(config, dataset=None):
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
     for var in dataset.data_vars:
-
         output_filename = config.get("output_dir") + f"/{var}.nc"
 
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(config.get("encoding"))
-        dataset[var].to_netcdf(
-            output_filename, **config.get("to_netcdf")
-        )
+        dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
     logger.info("Saved dataset - Check log.txt for warnings")
 

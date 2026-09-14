@@ -1,45 +1,27 @@
 """Console script for metplan."""
 
 import argparse
+import sys
+
 import metplan
 
 
-def generate_parser(app) -> argparse.ArgumentParser:
-    """Returns the instance of `argparse.ArgumentParser` used for `metplan`."""
-    # parent parser that contains the help argument
-    args_help = argparse.ArgumentParser(add_help=False)
-    args_help.add_argument(
-        "-h",
-        "--help",
-        action="help",
-        default=argparse.SUPPRESS,
-        help="Show this help message and exit.",
-    )
+def get_parser(default_app: callable) -> argparse.ArgumentParser:
+    """Get the parser for metplan
 
-    # parent parser that contains arguments common to all subcommands
-    args_subcommand = argparse.ArgumentParser(add_help=False)
-    args_subcommand.add_argument(
-        "-c",
-        "--config",
-        dest="config_path",
-        help="Config filename.",
-        default="config.yaml",
-    )
-    args_subcommand.add_argument(
-        "-v",
-        "--verbose",
-        help="Enable more detailed output in the command line.",
-        action="store_true",
-    )
+    Parameters
+    ----------
+    default_app : callable
+        Default method to call.
 
-    # main parser
-    main_parser = argparse.ArgumentParser(
-        description="metplan is a tool for preprocessing Meteorological Forcing Data.",
-        parents=[args_help],
-        add_help=False,
-    )
-
-    main_parser.add_argument(
+    Returns
+    -------
+    argparse.ArgumentParser
+        Parser object
+    """
+    # Base parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -47,23 +29,69 @@ def generate_parser(app) -> argparse.ArgumentParser:
         help="Show program's version number and exit.",
     )
 
-    subparsers = main_parser.add_subparsers(metavar="command")
+    # Shared arguments
+    args_shared = argparse.ArgumentParser(add_help=False)
 
-    # subcommand: 'benchcab run'
-    parser_run = subparsers.add_parser(
-        "run",
-        parents=[
-            args_help,
-            args_subcommand,
-        ],
-        help="Run metplan.",
-        description="""Runs metplan with config.yaml file assumed to be in the current folder.""",
-        add_help=False,
+    # Add Config
+    args_shared.add_argument(
+        "-c",
+        "--config",
+        help="Path to user config",
+        default=None,
+        type=str,
+        required=False,
     )
-    parser_run.set_defaults(func=app)
 
-    return main_parser
+    # Add verbosity
+    args_shared.add_argument(
+        "-v",
+        "--verbose",
+        help="Enable more detailed output",
+        default=False,
+        action="store_true",
+    )
+
+    # Set up subparsers
+    subparsers = parser.add_subparsers(help="Sub command")
+
+    # Add the subparser for running metplan
+    parser_run = subparsers.add_parser(
+        "run", help="Run metplan", description="Runs metplan.", parents=[args_shared]
+    )
+
+    # Assign default
+    parser_run.set_defaults(func=default_app)
+    return parser
 
 
-if __name__ == "__main__":
-    app()
+def parse_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
+    """Parse the arguments for the given parser, displaying help and exiting if no args.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser object.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed arguments.
+    """
+    # Check if no args, print help
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
+    return parser.parse_args()
+
+
+def dispatch(parsed_args: argparse.ArgumentParser):
+    """Dispatch the parsed arguments to the nominated function.
+
+    Parameters
+    ----------
+    parsed_args : argparse.ArgumentParser
+        Parsed arguments.
+    """
+    func = parsed_args.pop("func")
+    func(**parsed_args)
