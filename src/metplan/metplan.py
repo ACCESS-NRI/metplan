@@ -8,6 +8,7 @@ import yaml
 from hpcpy.utilities import interpolate_string_template
 
 import metplan.utils as mu
+import metplan.utils.metadata as mum
 from metplan.accu import daily_to_hourly_acc
 from metplan.dependency import generate_calculations
 from metplan.unit_conv import UnitConversion
@@ -160,7 +161,11 @@ def run_met(config, dataset=None):
 
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(config.get("encoding"))
-        dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
+
+        # TODO: Need to get the ERA5-Land version from the inputs. Metadata?
+        mum.apply_provenance(dataset[var], config, era5land_version=None).to_netcdf(
+            output_filename, **config.get("to_netcdf")
+        )
 
     logger.info("Saved dataset - Check log.txt for warnings")
 
