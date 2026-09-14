@@ -10,6 +10,7 @@ import xarray as xr
 from hpcpy import get_client
 
 import metplan.utils as mu
+import metplan.utils.metadata as mum
 from metplan.accu import daily_to_hourly_acc
 from metplan.dependency import generate_calculations
 from metplan.unit_conv import UnitConversion
@@ -180,10 +181,16 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     # Ensure that the output directory exists
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
-    output_filename = config.get("output_dir") + f"/{var}.nc"
-    logger.debug(f"Saving var: {var}")
-    dataset[var].encoding.update(config.get("encoding"))
-    dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
+    for var in dataset.data_vars:
+        output_filename = config.get("output_dir") + f"/{var}.nc"
+
+        logger.debug(f"Saving var: {var}")
+        dataset[var].encoding.update(config.get("encoding"))
+
+        # TODO: Need to get the ERA5-Land version from the inputs. Metadata?
+        mum.apply_provenance(dataset[var], config, era5land_version=None).to_netcdf(
+            output_filename, **config.get("to_netcdf")
+        )
 
     logger.info("Saved dataset - Check log.txt for warnings")
     logger.info(f"Ouput Filepath = {output_filename}")
