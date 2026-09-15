@@ -23,14 +23,6 @@ OUTPUT_FILE_FORMAT = "NETCDF4"
 PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
 
 
-METPLAN_PBS_PARAMS = dict(
-    mem="80G",
-    walltime="01:00:00",
-    storage=["gdata/xp65", "gdata/tm70"],
-    ncpus=16
-)
-
-
 def get_rename_param_criteria(params, param_map):
     """All input_param act as keys with the original key as value."""
     param_criteria = {}
@@ -64,7 +56,10 @@ with open(PARAM_MAP_FILE_NAME) as file:
 def load_dataset(config):
     ## REVIEW: Have validator like cerberus
     file_list = []
+    print("here")
+    print(config)
     for dir in config.get("directories"):
+        print(dir)
         file_list += list_nc_files(dir)
 
     ## TODO: Look more into parameter options for open_mfdataset
@@ -77,19 +72,13 @@ def load_dataset(config):
         engine="h5netcdf",
         parallel=True,
     )
-    dataset = xr.open_mfdataset(
-        file_list,
-        compat="override",
-        coords="minimal",
-        chunks={"latitude": 360},
-        engine="h5netcdf",
-    )
     logger.info("Loaded combined dataset")
 
     # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
-    dataset = dataset.sel(
-        time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True
-    )
+    if config.get("debug").get("single_day"):
+        dataset = dataset.sel(
+            time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True
+        )
     logger.debug(dataset)
     logger.debug(dataset.chunks)
     return dataset
@@ -128,16 +117,13 @@ def run_met(config_path, var=None, dataset=None):
                 # Interpolated parameters
                 metplan_path = metplan_path,
                 metplan_var = metplan_var,
-                mem = METPLAN_PBS_PARAMS["mem"],
-                walltime = METPLAN_PBS_PARAMS["walltime"],
-                storage = METPLAN_PBS_PARAMS["storage"],
-                ncpus=METPLAN_PBS_PARAMS["ncpus"],
                 project = config["project"],
-
+                **config.get("job_pbs"),
+                config_path = config_path
             )
             logger.info(f"Upload job submitted: {metplan_jobid}")
         print("Successfully submitted jobs")
-        sys.exit(0)
+        return dataset
     else:
         pass
 
@@ -210,12 +196,14 @@ def run_met(config_path, var=None, dataset=None):
     # Ensure that the output directory exists
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
-    for var in dataset.data_vars:
-        output_filename = config.get("output_dir") + f"/{var}.nc"
 
-        logger.debug(f"Saving var: {var}")
-        dataset[var].encoding.update(config.get("encoding"))
-        dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
+    output_filename = config.get("output_dir") + f"/{var}.nc"
+    logger.debug(f"Saving var: {var}")
+    dataset[var].encoding.update(config.get("encoding"))
+    dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
+
+    # for var in dataset.data_vars.keys():
+
 
     logger.info("Saved dataset - Check log.txt for warnings")
 

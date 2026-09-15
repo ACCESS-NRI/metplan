@@ -99,8 +99,9 @@ def main():
 
         parse_and_dispatch(parser, run_met)
     finally:
-        cluster.close()
-        client.close()
+        print("Closing cluster")
+        # cluster.close()
+        # client.close()
 
     # TODO: Check output result
     # TODO: Dask LocalCluster

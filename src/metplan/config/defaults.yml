@@ -15,14 +15,25 @@ to_netcdf:
 
 # Cluster settings for running on PBS (NCI)
 cluster_pbs:
-  n_workers: 1
-  # threads_per_worker: 4
-  # memory_limit: 4GB
+  n_workers: 6
+  threads_per_worker: 4
   processes: true
+
+job_pbs:
+  mem: 80G
+  walltime: "01:00:00"
+  storage:
+   - "gdata/xp65"
+   - "gdata/tm70"
+   - "gdata/zz93"
+  ncpus: 24
 
 # Cluster settings for running locally
 cluster_local:
   n_workers: 1
+
+debug:
+  single_day: true
 
 # Outputs
 output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan
