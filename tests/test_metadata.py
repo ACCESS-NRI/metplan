@@ -19,3 +19,18 @@ def test_apply_provenance():
     assert ds.attrs["metplan_command"] == dummy_command
     assert ds.attrs["metplan_config"] == json.dumps(dummy_config)
     assert ds.attrs["era5land_version"] == "unknown"
+
+
+def test_get_era5land_version():
+    """Get the ERA5-Land version (doi) out of the dataset"""
+
+    doi = "http://dx.doi.org/10.25914/5f48874388857"
+
+    ds = xr.Dataset()
+
+    # Check unparseable
+    assert mum.get_era5land_doi(ds) == "unknown"
+
+    # Check legitimate attribute
+    ds.attrs["summary"] = f"ERA5 ... please see {doi}"
+    assert doi == mum.get_era5land_doi(ds)
