@@ -1,3 +1,4 @@
+import re
 import json
 import sys
 from typing import Union
@@ -6,6 +7,26 @@ import xarray as xr
 
 from metplan import __version__
 
+
+def get_era5land_doi(ds: xr.Dataset) -> str:
+    """Get the DOI out of the ERA5-Land input datasets.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset
+
+    Returns
+    -------
+    str
+        ERA5-Land DOI or unknown if unable to parse
+    """
+    try:
+        summary = ds.attrs.get("summary")
+        match = re.search(r'https?://[^\s]+?(?=[.,;:!?)]*(?:\s|$))', summary)
+        return match.group(0) if match else "unknown"
+    except:
+        return "unknown"
 
 def apply_provenance(
     xr_obj: Union[xr.Dataset, xr.DataArray],
