@@ -19,8 +19,8 @@ jobs:
         with:
             miniconda-version: "latest"
             python-version: ${{ matrix.python-version }}
-            environment-file: ci/environment-${{ matrix.python-version }}.yml
-            activate-environment: metplan-${{ matrix.python-version }}
+            environment-file: .conda/metplan-dev.yml
+            activate-environment: metplan_dev
             auto-activate-base: false
 
       - name: Install source

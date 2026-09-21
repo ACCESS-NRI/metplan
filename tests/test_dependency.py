@@ -1,12 +1,13 @@
 import pytest
+
+from metplan.dependency import (
+    cycle_check,
+    order_load_dep,
+    process_dependencies,
+)
 from metplan.metplan import (
     get_rename_param_criteria,
     get_unit_conv_params,
-)
-from metplan.dependency import (
-    process_dependencies,
-    order_load_dep,
-    cycle_check,
 )
 from metplan.opt_param import calc_lwdown_swinbank
 from metplan.standard_param import vpd_tair_sh

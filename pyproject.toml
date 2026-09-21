@@ -7,4 +7,4 @@ name = "metplan"
 version = "0.1"
 
 [project.scripts]
-metplan = "metplan.main:main"
+metplan = "metplan.cli:cli"

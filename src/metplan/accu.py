@@ -1,6 +1,6 @@
-from xarray import DataArray
-import xarray as xr
 import pandas as pd
+import xarray as xr
+from xarray import DataArray
 
 
 def daily_to_hourly_acc(da: DataArray) -> DataArray:

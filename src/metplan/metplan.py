@@ -1,20 +1,21 @@
 """Main module."""
 
-import yaml
-import xarray as xr
-from metplan.unit_conv import UnitConversion
-from metplan.utils.files import list_nc_files
-import metplan.utils as mu
-from metplan.utils.logger import get_logger
-from metplan.accu import daily_to_hourly_acc
-from metplan.dependency import generate_calculations
-from hpcpy.utilities import interpolate_string_template
-from hpcpy import get_client
 import operator
+import os
 import shutil
 import sys
-import os
 import time
+
+import xarray as xr
+import yaml
+from hpcpy import get_client
+
+import metplan.utils as mu
+from metplan.accu import daily_to_hourly_acc
+from metplan.dependency import generate_calculations
+from metplan.unit_conv import UnitConversion
+from metplan.utils.files import list_nc_files
+from metplan.utils.logger import get_logger
 
 xr.set_options(keep_attrs=True)
 logger = get_logger()
@@ -49,6 +50,7 @@ def get_var_dependencies(dep_list, dataset):
         if param_map.get(var, {}).get("type") in ("standard", "optional")
     ]
 
+# TODO: This should be loaded explicitly, not inline like this.
 with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
 
@@ -84,63 +86,26 @@ def load_dataset(config):
     return dataset
 
 
-def run_met(config_path, var=None, dataset=None):
-    """Run preprocessor for meteorological forcing dataset(s)."""
+def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.Dataset:
+    """Process a single variable instance.
 
-    # Load the configuration
-    config = mu.load_config(config_path)
-    print(f"var is passed {var}")
+    Parameters
+    ----------
+    config : dict
+        Configuration
+    var : str
+        Variable name
+    dataset : xr.Dataset
+        Preloaded input dataset.
+    dep_list : list
+        Dependency list
 
-    with open(PARAM_MAP_FILE_NAME) as file:
-        param_map = yaml.safe_load(file)
-
-    if dataset is None:
-        dataset = load_dataset(config)
-
+    Returns
+    -------
+    xr.Dataset
+        Processed dataset.
+    """
     tic = time.perf_counter()
-
-    # 1. Rename parameters
-    param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
-    dataset = dataset.rename(param_criteria)
-
-    dep_list = generate_calculations(dataset, param_map)
-
-    if var is None:
-        var_list = get_var_dependencies(dep_list, dataset)
-        for metplan_var in var_list:
-            client = get_client()
-            metplan_path = shutil.which(sys.argv[0])
-            metplan_jobid = client.submit(
-                mu.get_installed_root() / "data" / "pbs_jobscript.j2",
-                render = True,
-                dry_run=False,
-                # Interpolated parameters
-                metplan_path = metplan_path,
-                metplan_var = metplan_var,
-                project = config["project"],
-                **config.get("job_pbs"),
-                config_path = config_path
-            )
-            logger.info(f"Upload job submitted: {metplan_jobid}")
-        print("Successfully submitted jobs")
-        return dataset
-    else:
-        pass
-
-    # 1: Segregate by year/var
-    # for var in dataset.data_vars:
-    #     var_output_dir = f"{config.get('output_directory')}/{var}"
-    #     try:
-    #         shutil.rmtree(config.get("output_directory"))
-    #     except OSError as e:
-    #         print("Error: %s - %s." % (e.filename, e.strerror))
-    #     os.mkdir(var_output_dir)
-
-    #     for year in dataset.time.dt.year.unique:
-    #         pass
-
-    # TODO 2: Read year/year and do dask job queue
-    # https://examples.dask.org/applications/embarrassingly-parallel.html
 
     # 2. Hourly accumulator
     for v in config.get("hourly_acc"):
@@ -196,18 +161,93 @@ def run_met(config_path, var=None, dataset=None):
     # Ensure that the output directory exists
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
-
     output_filename = config.get("output_dir") + f"/{var}.nc"
     logger.debug(f"Saving var: {var}")
     dataset[var].encoding.update(config.get("encoding"))
     dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
-    # for var in dataset.data_vars.keys():
-
-
     logger.info("Saved dataset - Check log.txt for warnings")
+    logger.info(f"Ouput Filepath = {output_filename}")
 
     toc = time.perf_counter()
     print(f"Completed in {toc - tic:0.4f} seconds")
 
     return dataset
+
+
+def run_met(config: dict, var: str = None, dataset: xr.Dataset = None) -> xr.Dataset | None:
+    """Wrapper for singular/multivariate processing.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration.
+    var : str, optional
+        Variable to process, by default None (which loads from config)
+    dataset : xr.Dataset, optional
+        Pre-loaded dataset, by default None (which loads from config)
+
+    Returns
+    -------
+    xr.Dataset | None
+        _description_
+    """
+    logger = get_logger()
+
+    logger.debug("Loading param_map")
+    with open(PARAM_MAP_FILE_NAME) as file:
+        param_map = yaml.safe_load(file)
+
+    if dataset is None:
+        logger.debug("No dataset provided, loading.")
+        dataset = load_dataset(config)
+
+    # 1. Rename parameters
+    logger.debug("Getting renaming param criteria")
+    param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
+    dataset = dataset.rename(param_criteria)
+
+    logger.debug("Generating dependency list")
+    dep_list = generate_calculations(dataset, param_map)
+
+    # Use case 1 - A single processing instance for a variable processed in this job
+    if var:
+        logger.debug(f"Single variable run ({var})")
+        client, cluster = mu.start_dask_client(config)
+        ds = _run_met(config, var, dataset, dep_list)
+        mu.stop_dask_client(client, cluster)
+        return ds
+
+    # Use case 2 - All variables submitted and processed in their own jobs
+    else:
+
+        logger.debug("Preparing to submit all variables for processing")
+
+        # Get an HPCpy client, path to exec etc.
+        logger.debug("Getting HPCpy client")
+        client = get_client()
+        metplan_path = shutil.which(sys.argv[0])
+        jobscript_path = mu.get_installed_root() / "data" / "pbs_jobscript.j2"
+
+        logger.debug(f"metplan_path = {metplan_path}")
+        logger.debug(f"jobscript_path = {jobscript_path}")
+
+        for var in get_var_dependencies(dep_list, dataset):
+
+            metplan_path = shutil.which(sys.argv[0])
+            job = client.submit(
+                jobscript_path,
+                render=True,
+                metplan_path=metplan_path,
+                metplan_var=var,
+                project=config.get("project"),
+                **config.get("job_pbs"),
+                config_path=config["user_config"],
+                directives=[f"-N {var}"]
+            )
+
+            logger.info(f"{var} = {job.id}")
+            submit_cmd = client.history[0]
+            logger.debug(submit_cmd)
+
+        logger.info("All jobs submitted. Exiting.")

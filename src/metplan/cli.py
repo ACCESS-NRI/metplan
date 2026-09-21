@@ -1,45 +1,31 @@
 """Console script for metplan."""
 
 import argparse
+import os
+import sys
+
 import metplan
+import metplan.utils as mu
+from metplan.metplan import run_met
+from metplan.utils.logger import get_logger
 
 
-def generate_parser(app) -> argparse.ArgumentParser:
-    """Returns the instance of `argparse.ArgumentParser` used for `metplan`."""
-    # parent parser that contains the help argument
-    args_help = argparse.ArgumentParser(add_help=False)
-    args_help.add_argument(
-        "-h",
-        "--help",
-        action="help",
-        default=argparse.SUPPRESS,
-        help="Show this help message and exit.",
-    )
+def get_parser(default_app: callable) -> argparse.ArgumentParser:
+    """Get the parser for metplan
 
-    # parent parser that contains arguments common to all subcommands
-    args_subcommand = argparse.ArgumentParser(add_help=False)
-    args_subcommand.add_argument(
-        "-c",
-        "--config",
-        dest="config_path",
-        help="Config filename.",
-        default="config.yaml",
-    )
-    args_subcommand.add_argument(
-        "-v",
-        "--verbose",
-        help="Enable more detailed output in the command line.",
-        action="store_true",
-    )
+    Parameters
+    ----------
+    default_app : callable
+        Default method to call.
 
-    # main parser
-    main_parser = argparse.ArgumentParser(
-        description="metplan is a tool for preprocessing Meteorological Forcing Data.",
-        parents=[args_help],
-        add_help=False,
-    )
-
-    main_parser.add_argument(
+    Returns
+    -------
+    argparse.ArgumentParser
+        Parser object
+    """
+    # Base parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -47,20 +33,35 @@ def generate_parser(app) -> argparse.ArgumentParser:
         help="Show program's version number and exit.",
     )
 
-    subparsers = main_parser.add_subparsers(metavar="command")
+    # Shared arguments
+    args_shared = argparse.ArgumentParser(add_help=False)
 
-    # subcommand: 'benchcab run'
-    parser_run = subparsers.add_parser(
-        "run",
-        parents=[
-            args_help,
-            args_subcommand,
-        ],
-        help="Run metplan.",
-        description="""Runs metplan with config.yaml file assumed to be in the current folder.""",
-        add_help=False,
+    # Add Config
+    args_shared.add_argument(
+        "-c",
+        "--config",
+        help="Path to user config",
+        default=None,
+        type=str,
+        required=False,
     )
-    parser_run.set_defaults(func=app)
+
+    # Add verbosity
+    args_shared.add_argument(
+        "-v",
+        "--verbose",
+        help="Enable more detailed output",
+        default=False,
+        action="store_true",
+    )
+
+    # Set up subparsers
+    subparsers = parser.add_subparsers(help="Sub command")
+
+    # Add the subparser for running metplan
+    parser_run = subparsers.add_parser(
+        "run", help="Run metplan", description="Runs metplan.", parents=[args_shared]
+    )
 
     # Require either a single variable or --all, but not both.
     group_run = parser_run.add_mutually_exclusive_group(required=True)
@@ -77,4 +78,69 @@ def generate_parser(app) -> argparse.ArgumentParser:
         help="Process all variables instead of specifying one.",
     )
 
-    return main_parser
+    # Assign default
+    parser_run.set_defaults(func=default_app)
+    return parser
+
+
+def parse_args(parser: argparse.ArgumentParser) -> dict:
+    """Parse the arguments for the given parser, displaying help and exiting if no args.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Parser object.
+
+    Returns
+    -------
+    dict
+        Parsed arguments.
+    """
+    # Check if no args, print help
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
+    # Ensure that there is no var set if all is set
+    args = vars(parser.parse_args())
+    args["var"] = None if args.pop("all") else args["var"]
+
+    # Attach the user config (needs to absolute for submission)
+    args["config"] = mu.load_config(user_config=os.path.abspath(args["config"]))
+
+    return args
+
+
+def dispatch(parsed_args: argparse.ArgumentParser):
+    """Dispatch the parsed arguments to the nominated function.
+
+    Parameters
+    ----------
+    parsed_args : argparse.ArgumentParser
+        Parsed arguments.
+    """
+    func = parsed_args.pop("func")
+    func(**parsed_args)
+
+
+def cli():
+    """CLI entrypoint for the system."""
+
+    # Parse intially to get the optional user config path
+    args = parse_args(get_parser(run_met))
+
+    # Set up the logger, remove verbosity
+    log_level = "debug" if args.pop("verbose") else "info"
+    logger = get_logger(level=log_level)
+
+    # Dispatch to command
+    logger.debug("Dispatching")
+    dispatch(args)
+
+#     # TODO: Check output result
+#     # TODO: Dask LocalCluster
+#     # TODO: Weather Generator
+#     # TODO: Temporal / Spatial resolution - Reference gridinfo - maximum types of datasets to support (3 is ideal). Warn if more than 2
+
+
+# # https://github.com/AusClimateService/axiom
