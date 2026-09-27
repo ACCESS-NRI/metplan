@@ -28,26 +28,26 @@ def sample_xarray_data():
 
     reference_time = pd.Timestamp("2014-09-05")
     ds = xr.Dataset(
-        data_vars=dict(
-            ssrd=(
+        data_vars={
+            "ssrd": (
                 ["lon", "lat", "time"],
                 shortwave_rad,
                 {"units": "J m**-2"},
             ),  # SWDown
-            strd=(["lon", "lat", "time"], longwave_rad, {"units": "J m**-2"}),  # LWDown
-            t2m=(["lon", "lat", "time"], temperature, {"units": "K"}),  # Tair
-            tp=(["lon", "lat", "time"], rain, {"units": "mm"}),  # Rainf
-            u10=(["lon", "lat", "time"], wind_u, {"units": "m s**-1"}),  # Wind
-            v10=(["lon", "lat", "time"], wind_v, {"units": "m s**-1"}),  # Wind
-            sp=(["lon", "lat", "time"], surf_pressure, {"units": "Pa"}),  # PSurf
-        ),
-        coords=dict(
-            lon=lon,
-            lat=lat,
-            time=time,
-            reference_time=reference_time,
-        ),
-        attrs=dict(description="Test dataset."),
+            "strd": (["lon", "lat", "time"], longwave_rad, {"units": "J m**-2"}),  # LWDown
+            "t2m": (["lon", "lat", "time"], temperature, {"units": "K"}),  # Tair
+            "tp": (["lon", "lat", "time"], rain, {"units": "mm"}),  # Rainf
+            "u10": (["lon", "lat", "time"], wind_u, {"units": "m s**-1"}),  # Wind
+            "v10": (["lon", "lat", "time"], wind_v, {"units": "m s**-1"}),  # Wind
+            "sp": (["lon", "lat", "time"], surf_pressure, {"units": "Pa"}),  # PSurf
+        },
+        coords={
+            "lon": lon,
+            "lat": lat,
+            "time": time,
+            "reference_time": reference_time,
+        },
+        attrs={"description": "Test dataset."},
     )
     return ds
 
