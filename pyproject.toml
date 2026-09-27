@@ -8,3 +8,7 @@ version = "0.1"
 
 [project.scripts]
 metplan = "metplan.main:main"
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "DEBUG"

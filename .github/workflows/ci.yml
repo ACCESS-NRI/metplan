@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests
         shell: bash -l {0}
-        run: coverage run -m --source=metplan pytest tests
+        run: coverage run -m --source=metplan pytest tests -v
       
       - name: Generate coverage report
         shell: bash -l {0}
