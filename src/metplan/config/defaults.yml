@@ -26,7 +26,6 @@ job_pbs:
    - "gdata/xp65"
    - "gdata/tm70"
    - "gdata/zz93"
-   - "gdata/rp23"
   ncpus: 24
 
 # Cluster settings for running locally
