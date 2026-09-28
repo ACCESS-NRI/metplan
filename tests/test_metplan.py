@@ -64,6 +64,7 @@ tolerances = {
     ],
 )
 def met_run(request):
+    """Run metplan for sample datasets."""
     input_path, expected_path = request.param
 
     os.environ["PROJECT"] = "TEST_PROJECT"
