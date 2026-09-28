@@ -91,6 +91,7 @@ def met_run(request):
         cluster.close()
 
 def test_sample_dataset(met_run):
+    """Test dataset creation is within tolerances."""
     output_dataset, expected_dataset = met_run
     if expected_dataset is None:
         pytest.skip("No expected output for this input")
