@@ -1,5 +1,5 @@
 # Gadi Project
-project: tm70
+project: {{ PROJECT | default('TEST_PROJECT') }}
 
 # Encoding
 encoding:

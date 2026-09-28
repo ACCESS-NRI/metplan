@@ -1,6 +1,6 @@
 import os
+
 import netCDF4
-import metplan.utils as mu
 
 
 def list_nc_files(d):
@@ -34,7 +34,7 @@ def list_variables(paths: str | list) -> list:
 
     # Parse the variable names
     varnames = []
-    for path in paths:    
+    for path in paths:
         with netCDF4.Dataset(path) as nc:
             varnames += [v for v in nc.variables if v not in nc.dimensions]
 

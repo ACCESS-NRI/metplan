@@ -83,13 +83,15 @@ def get_parser(default_app: callable) -> argparse.ArgumentParser:
     return parser
 
 
-def parse_args(parser: argparse.ArgumentParser) -> dict:
+def parse_args(parser: argparse.ArgumentParser, arg_list: list = []) -> dict:
     """Parse the arguments for the given parser, displaying help and exiting if no args.
 
     Parameters
     ----------
     parser : argparse.ArgumentParser
         Parser object.
+    arg_list : list
+        Argument list to parse (mostly for testing).
 
     Returns
     -------
@@ -102,11 +104,12 @@ def parse_args(parser: argparse.ArgumentParser) -> dict:
         sys.exit(1)
 
     # Ensure that there is no var set if all is set
-    args = vars(parser.parse_args())
+    args = vars(parser.parse_args(arg_list))
     args["var"] = None if args.pop("all") else args["var"]
 
     # Attach the user config (needs to absolute for submission)
-    args["config"] = mu.load_config(user_config=os.path.abspath(args["config"]))
+    if args["config"]:
+        args["config"] = mu.load_config(user_config=os.path.abspath(args["config"]))
 
     return args
 
@@ -136,6 +139,7 @@ def cli():
     # Dispatch to command
     logger.debug("Dispatching")
     dispatch(args)
+
 
 #     # TODO: Check output result
 #     # TODO: Dask LocalCluster

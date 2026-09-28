@@ -42,13 +42,16 @@ def get_unit_conv_params(param_map):
         if param_attrs.get("unit") is not None
     ]
 
+
 def get_var_dependencies(dep_list, dataset):
     var_list = list(map(operator.itemgetter(0), dep_list))
     variables = set(var_list).union(dataset.data_vars)
     return [
-        var for var in variables
+        var
+        for var in variables
         if param_map.get(var, {}).get("type") in ("standard", "optional")
     ]
+
 
 # TODO: This should be loaded explicitly, not inline like this.
 with open(PARAM_MAP_FILE_NAME) as file:
@@ -175,7 +178,9 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     return dataset
 
 
-def run_met(config: dict, var: str = None, dataset: xr.Dataset = None) -> xr.Dataset | None:
+def run_met(
+    config: dict, var: str = None, dataset: xr.Dataset = None
+) -> xr.Dataset | None:
     """Wrapper for singular/multivariate processing.
 
     Parameters
@@ -243,7 +248,7 @@ def run_met(config: dict, var: str = None, dataset: xr.Dataset = None) -> xr.Dat
                 project=config.get("project"),
                 **config.get("job_pbs"),
                 config_path=config["user_config"],
-                directives=[f"-N {var}"]
+                directives=[f"-N {var}"],
             )
 
             logger.info(f"{var} = {job.id}")

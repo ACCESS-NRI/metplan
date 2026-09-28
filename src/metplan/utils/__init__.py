@@ -89,7 +89,7 @@ def load_config(user_config=None) -> dict:
             config = deep_update(config, _config)
 
     # Add the config path to the dict
-    config['user_config'] = user_config
+    config["user_config"] = user_config
 
     return config
 
