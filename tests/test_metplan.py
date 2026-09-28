@@ -111,6 +111,7 @@ def cable_time_reference():
 
 
 def test_dataset_time_encoding(met_run, cable_time_reference):
+    """Test the time encoding is correctly applied."""
     output_dataset, _ = met_run
     encoding = output_dataset["time"].encoding
     assert encoding["units"] == cable_time_reference["units"]
