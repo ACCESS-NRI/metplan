@@ -1,0 +1,36 @@
+import json
+
+import xarray as xr
+
+import metplan.utils.metadata as mum
+from metplan import __version__
+
+
+def test_apply_provenance():
+    """Test apply_provenance on the dataset"""
+
+    dummy_config = {"test_key": "test_value"}
+    dummy_command = "metplan run"
+    ds = mum.apply_provenance(
+        xr.Dataset(), config=dummy_config, command=dummy_command, era5land_version=None
+    )
+
+    assert ds.attrs["metplan_version"] == __version__
+    assert ds.attrs["metplan_command"] == dummy_command
+    assert ds.attrs["metplan_config"] == json.dumps(dummy_config)
+    assert ds.attrs["era5land_version"] == "unknown"
+
+
+def test_get_era5land_version():
+    """Get the ERA5-Land version (doi) out of the dataset"""
+
+    doi = "http://dx.doi.org/10.25914/5f48874388857"
+
+    ds = xr.Dataset()
+
+    # Check unparseable
+    assert mum.get_era5land_doi(ds) == "unknown"
+
+    # Check legitimate attribute
+    ds.attrs["summary"] = f"ERA5 ... please see {doi}"
+    assert doi == mum.get_era5land_doi(ds)
