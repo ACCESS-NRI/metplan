@@ -7,6 +7,8 @@ import os
 import tempfile
 
 import numpy as np
+import pandas as pd
+import pytest
 import xarray as xr
 from dask.distributed import Client, LocalCluster
 
@@ -53,7 +55,17 @@ tolerances = {
 }
 
 
-def test_sample_dataset():
+# We use both types of input (Reading from NetCDF and existing fixture)
+@pytest.fixture(
+    scope="module",
+    params=[
+        ("tests/data/test_input.nc", "tests/data/test_output.nc"),
+        ("sample_xarray_data", None),
+    ],
+)
+def met_run(request):
+    """Run metplan for sample datasets."""
+    input_path, expected_path = request.param
 
     os.environ["PROJECT"] = "TEST_PROJECT"
     os.environ["USER"] = "TEST_USER"
@@ -63,14 +75,46 @@ def test_sample_dataset():
 
         config["output_dir"] = td
 
-        test_dataset = xr.open_dataset("tests/data/test_input.nc", engine="h5netcdf")
-        expected_dataset = xr.open_dataset(
-            "tests/data/test_output.nc", engine="h5netcdf"
+        if input_path.endswith(".nc"):
+            test_dataset = xr.open_dataset(input_path, engine="h5netcdf")
+        else:
+            test_dataset = request.getfixturevalue(input_path)
+        expected_dataset = (
+            xr.open_dataset(expected_path, engine="h5netcdf") if expected_path else None
         )
         cluster = LocalCluster(n_workers=4, threads_per_worker=1, memory_limit="4GB")
         client = Client(cluster)
         output_dataset = run_met(config, test_dataset)
-        for var in output_dataset.data_vars:
-            xr.testing.assert_allclose(
-                output_dataset[var], expected_dataset[var], rtol=tolerances[var]
-            )
+
+        yield output_dataset, expected_dataset
+
+        client.close()
+        cluster.close()
+
+def test_sample_dataset(met_run):
+    """Test dataset creation is within tolerances."""
+    output_dataset, expected_dataset = met_run
+    if expected_dataset is None:
+        pytest.skip("No expected output for this input")
+    for var in output_dataset.data_vars:
+        xr.testing.assert_allclose(
+            output_dataset[var], expected_dataset[var], rtol=tolerances[var]
+        )
+
+
+@pytest.fixture(scope="module")
+def cable_time_reference():
+    """CABLE expects the time axis to be encoded relative to this reference."""
+    return {
+        "reference": pd.Timestamp("1900-01-01 01:00:00"),
+        "units": "hours since 1900-01-01 01:00:00",
+        "calendar": "proleptic_gregorian",
+    }
+
+
+def test_dataset_time_encoding(met_run, cable_time_reference):
+    """Test the time encoding is correctly applied."""
+    output_dataset, _ = met_run
+    encoding = output_dataset["time"].encoding
+    assert encoding["units"] == cable_time_reference["units"]
+    assert encoding["calendar"] == cable_time_reference["calendar"]

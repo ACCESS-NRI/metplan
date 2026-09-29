@@ -149,6 +149,10 @@ def run_met(config, dataset=None):
         )
     )
 
+    dataset["time"].encoding["units"] = "hours since 1900-01-01 01:00:00"
+    dataset["time"].encoding["calendar"] = "proleptic_gregorian"
+
+
     logger.info("Saving dataset")
     logger.debug(dataset)
 
