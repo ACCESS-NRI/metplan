@@ -5,7 +5,6 @@ import time
 
 import xarray as xr
 import yaml
-from hpcpy.utilities import interpolate_string_template
 
 import metplan.utils as mu
 from metplan.accu import daily_to_hourly_acc

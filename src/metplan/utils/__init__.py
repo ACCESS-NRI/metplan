@@ -1,5 +1,7 @@
 import copy
 import os
+import re
+import sys
 from importlib import resources
 from pathlib import Path
 
@@ -140,3 +142,73 @@ def stop_dask_client(client: Client, cluster: LocalCluster = None):
     # Optionally stop the cluster
     if isinstance(cluster, LocalCluster):
         cluster.close()
+
+
+def extract_storage_directive(path: str) -> str:
+    """Convert a path to the relevant storage directive.
+
+    Parameters
+    ----------
+    path : str
+        Path to something.
+
+    Returns
+    -------
+    str
+        Storage flag required to access the path.
+    """
+    pattern = re.compile(r"^(?P<root>/g/data|/scratch)/(?P<project>[^/]+)")
+    m = pattern.match(path)
+
+    try:
+        root, project = m["root"].replace("/", ""), m["project"]
+        return f"{root}/{project}"
+    except:
+        return None
+
+
+def assemble_storage_directives(
+    config: dict, executable_path: str = sys.argv[0]
+) -> list:
+    """Get the storage directive dynamically from config etc.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration
+    executable_path: str
+        Path to the executable, defaults to sys.argv[0]
+
+    Returns
+    -------
+    list
+        List of storage directives.
+    """
+    storage = []
+
+    # Add the flag to the executable
+    storage.append(extract_storage_directive(executable_path))
+
+    # Add scratch/gdata for the project set in config
+    project = config.get("project")
+    storage.append(f"gdata/{project}")
+    storage.append(f"scratch/{project}")
+
+    # Add the input directories from config
+    for input_path in config.get("directories", []):
+        storage.append(extract_storage_directive(input_path))
+
+    # Add the output directory
+    if config.get("output_dir"):
+        storage.append(extract_storage_directive(config.get("output_dir")))
+
+    # Add anything else from configuration (i.e. supplied by user)
+    storage += config.get("job_pbs", {}).get("storage", [])
+
+    # Remove the Nones
+    storage = [x for x in storage if x]
+
+    # Ensure unique
+    storage = list(set(storage))
+
+    return sorted(storage)

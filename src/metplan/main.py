@@ -1,6 +1,3 @@
-import os
-import sys
-
 import metplan.cli as mc
 import metplan.utils as mu
 from metplan.metplan import run_met

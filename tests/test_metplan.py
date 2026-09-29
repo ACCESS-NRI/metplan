@@ -14,7 +14,6 @@ from dask.distributed import Client, LocalCluster
 
 import metplan.utils as mu
 from metplan.metplan import run_met
-from metplan.utils.logger import get_logger
 
 # Receive consistent results with the test output file
 seed_value = 42

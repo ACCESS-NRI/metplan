@@ -8,6 +8,45 @@ import metplan.utils as mu
 from metplan.utils.files import list_nc_files
 
 
+def test_extract_storage_directive():
+    """Test to extract storage directives from various paths."""
+
+    project = "abc123"
+
+    # gdata
+    assert f"gdata/{project}" == mu.extract_storage_directive(
+        f"/g/data/{project}/test/test"
+    )
+
+    # scratch
+    assert f"scratch/{project}" == mu.extract_storage_directive(
+        f"/scratch/{project}/test/test"
+    )
+
+    # None
+    assert None == mu.extract_storage_directive("should/be/none")
+
+
+def test_assemble_storage_directives():
+    """Test assemble_storage_directives returns for dynamic directives."""
+
+    # Mock the project
+    project = "abc123"
+    os.environ["PROJECT"] = project
+
+    # Mock the executable path
+    exectuable_path = "/g/data/xp65/path/to/metplan"
+
+    # Mock the config
+    config = {"project": project, "directories": ["/g/data/zz93/inputs"]}
+
+    expected = sorted(
+        [f"gdata/{project}", f"scratch/{project}", "gdata/xp65", "gdata/zz93"]
+    )
+
+    assert mu.assemble_storage_directives(config, exectuable_path) == expected
+
+
 def test_deep_update():
     """Test deep_update"""
     dict1 = dict(a=dict(a=1), b=1)
