@@ -85,7 +85,7 @@ def met_run(request):
             xr.open_dataset(expected_path, engine="h5netcdf") if expected_path else None
         )
 
-        output_dataset = run_met(config, test_dataset)
+        output_dataset = run_met(config, var="SWDown", dataset=test_dataset)
 
         yield output_dataset, expected_dataset
 
