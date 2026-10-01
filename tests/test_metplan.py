@@ -10,11 +10,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from dask.distributed import Client, LocalCluster
 
 import metplan.utils as mu
 from metplan.metplan import run_met
-from metplan.utils.logger import get_logger
 
 # Receive consistent results with the test output file
 seed_value = 42
@@ -69,9 +67,13 @@ def met_run(request):
 
     os.environ["PROJECT"] = "TEST_PROJECT"
     os.environ["USER"] = "TEST_USER"
-    config = mu.load_config("config.yaml")
+    config_path = "tests/data/test_config.yaml"
+    print(config_path)
+    config = mu.load_config(user_config=config_path)
 
     with tempfile.TemporaryDirectory() as td:
+
+        client, cluster = mu.start_dask_client(config)
 
         config["output_dir"] = td
 
@@ -82,14 +84,13 @@ def met_run(request):
         expected_dataset = (
             xr.open_dataset(expected_path, engine="h5netcdf") if expected_path else None
         )
-        cluster = LocalCluster(n_workers=4, threads_per_worker=1, memory_limit="4GB")
-        client = Client(cluster)
-        output_dataset = run_met(config, test_dataset)
+
+        output_dataset = run_met(config, var="SWDown", dataset=test_dataset)
 
         yield output_dataset, expected_dataset
 
-        client.close()
-        cluster.close()
+        mu.stop_dask_client(client, cluster)
+
 
 def test_sample_dataset(met_run):
     """Test dataset creation is within tolerances."""

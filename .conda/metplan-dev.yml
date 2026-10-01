@@ -8,7 +8,8 @@ channels:
 
 dependencies:
   - coverage>=7.0.0
-  - dask==2025.5
+  - dask>=2025.5
+  - distributed
   - h5netcdf==1.8.1
   - h5py
   - netcdf4

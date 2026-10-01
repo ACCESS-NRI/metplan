@@ -63,16 +63,19 @@ def load_config(user_config=None) -> dict:
     dict
         Final configuation after all overrides.
     """
-
+    logger = get_logger()
     # Load the default configuration
     config_paths = [get_installed_root() / "config" / "defaults.yml"]
 
     if user_config and Path(user_config).is_file():
+        logger.debug(f"Appending user config {user_config}")
         config_paths.append(Path(user_config))
 
     # Iteratively load the configuration in order
     config = dict()
     for cp in config_paths:
+
+        logger.debug(f"Loading config {cp}")
 
         # Only attempt load if it exists and is correct format
         if os.path.isfile(cp) and cp.suffix in [".yml", ".yaml"]:
@@ -84,6 +87,9 @@ def load_config(user_config=None) -> dict:
             # Parse the config, interpolating environment vars
             _config = yaml.safe_load(raw_env)
             config = deep_update(config, _config)
+
+    # Add the config path to the dict
+    config["user_config"] = user_config
 
     return config
 

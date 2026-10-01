@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def get_logger(name="metplan", level="debug"):
+def get_logger(name="metplan", level="info"):
     """Get a logger instance.
 
     Parameters

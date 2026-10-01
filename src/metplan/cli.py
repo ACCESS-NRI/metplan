@@ -1,9 +1,13 @@
 """Console script for metplan."""
 
 import argparse
+import os
 import sys
 
 import metplan
+import metplan.utils as mu
+from metplan.metplan import run_met
+from metplan.utils.logger import get_logger
 
 
 def get_parser(default_app: callable) -> argparse.ArgumentParser:
@@ -59,22 +63,39 @@ def get_parser(default_app: callable) -> argparse.ArgumentParser:
         "run", help="Run metplan", description="Runs metplan.", parents=[args_shared]
     )
 
+    # Require either a single variable or --all, but not both.
+    group_run = parser_run.add_mutually_exclusive_group(required=True)
+    group_run.add_argument(
+        "var",
+        nargs="?",
+        default=None,
+        help="Name of the variable to process.",
+    )
+    group_run.add_argument(
+        "--all",
+        dest="all",
+        action="store_true",
+        help="Process all variables instead of specifying one.",
+    )
+
     # Assign default
     parser_run.set_defaults(func=default_app)
     return parser
 
 
-def parse_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
+def parse_args(parser: argparse.ArgumentParser, arg_list: list = []) -> dict:
     """Parse the arguments for the given parser, displaying help and exiting if no args.
 
     Parameters
     ----------
     parser : argparse.ArgumentParser
         Parser object.
+    arg_list : list
+        Argument list to parse (mostly for testing).
 
     Returns
     -------
-    argparse.Namespace
+    dict
         Parsed arguments.
     """
     # Check if no args, print help
@@ -82,7 +103,15 @@ def parse_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
         parser.print_help()
         sys.exit(1)
 
-    return parser.parse_args()
+    # Ensure that there is no var set if all is set
+    args = vars(parser.parse_args(arg_list))
+    args["var"] = None if args.pop("all") else args["var"]
+
+    # Attach the user config (needs to absolute for submission)
+    if args["config"]:
+        args["config"] = mu.load_config(user_config=os.path.abspath(args["config"]))
+
+    return args
 
 
 def dispatch(parsed_args: argparse.ArgumentParser):
@@ -95,3 +124,27 @@ def dispatch(parsed_args: argparse.ArgumentParser):
     """
     func = parsed_args.pop("func")
     func(**parsed_args)
+
+
+def cli():
+    """CLI entrypoint for the system."""
+
+    # Parse intially to get the optional user config path
+    args = parse_args(get_parser(run_met))
+
+    # Set up the logger, remove verbosity
+    log_level = "debug" if args.pop("verbose") else "info"
+    logger = get_logger(level=log_level)
+
+    # Dispatch to command
+    logger.debug("Dispatching")
+    dispatch(args)
+
+
+#     # TODO: Check output result
+#     # TODO: Dask LocalCluster
+#     # TODO: Weather Generator
+#     # TODO: Temporal / Spatial resolution - Reference gridinfo - maximum types of datasets to support (3 is ideal). Warn if more than 2
+
+
+# # https://github.com/AusClimateService/axiom
