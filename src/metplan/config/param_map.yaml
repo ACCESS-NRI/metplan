@@ -29,7 +29,7 @@ Tair:
     - t2m
   unit:
     kelvin
-SWDown:
+SWdown:
   type: standard
   input_param:
     - srad
@@ -121,7 +121,7 @@ tmin:
   type: conversion
 
 # Optional Params
-LWDown:
+LWdown:
   type: optional
   input_param:
     - strd

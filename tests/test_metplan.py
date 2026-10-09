@@ -24,8 +24,8 @@ rng = np.random.default_rng(seed=seed_value)
 # https://github.com/CABLE-LSM/CABLE/blob/1701acb7c5dacb88df22d42a7f61d283cb285764/src/offline/cable_checks.F90#L60
 # Constant ranges dict
 ranges = {
-    "SWDown": [0.0, 1360.0],  # W/m^2
-    "LWDown": [0.0, 950.0],  # W/m^2
+    "SWdown": [0.0, 1360.0],  # W/m^2
+    "LWdown": [0.0, 950.0],  # W/m^2
     "Rainf": [0.0, 0.1],  # mm/s
     "Snowf": [0.0, 0.1],  # mm/s
     "PSurf": [500.0, 1100.0],  # mbar/hPa
