@@ -2,6 +2,8 @@
 
 import os
 import time
+from collections.abc import Collection, Hashable
+from typing import Any
 
 import xarray as xr
 import yaml
@@ -21,16 +23,33 @@ OUTPUT_FILE_FORMAT = "NETCDF4"
 CONFIG_FILE_NAME = "config.yaml"
 PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
 
+def get_rename_param_criteria(params, param_map, coords=()) -> dict[Hashable, str]:
+    """ Data variables are renamed by standard/optional/conversion entries,
+    coordinates/dimensions by `coordinate` entries (eg. latitude -> lat) based
+    on param_map.yaml
 
-def get_rename_param_criteria(params, param_map):
-    """All input_param act as keys with the original key as value."""
-    param_criteria = {}
+    Parameters
+    ----------
+    params : 
+        Data variable names present in the input dataset.
+    param_map : 
+        Parameter map loaded from `param_map.yaml`.
+    coords : 
+        Coordinate and dimension names present in the input dataset,
+        by default ().
+
+    Returns
+    -------
+    dict[Hashable, str]
+        Mapping of input name -> name in param_map
+    """
+    param_criteria: dict[Hashable, str] = {}
     for param, param_info in param_map.items():
+        candidates = coords if param_info.get("type") == "coordinate" else params
         for input_value in param_info.get("input_param", []):
-            if input_value in params:
+            if input_value in candidates:
                 param_criteria[input_value] = param
     return param_criteria
-
 
 def get_unit_conv_params(param_map):
     """Units conversions are to be done for all params having unit in mapping."""
@@ -82,7 +101,11 @@ def run_met(config, dataset=None):
     tic = time.perf_counter()
 
     # 1. Rename parameters
-    param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
+    param_criteria = get_rename_param_criteria(
+        list(dataset.data_vars),
+        param_map,
+        coords=list(set(dataset.coords) | set(dataset.dims)),
+    )
     dataset = dataset.rename(param_criteria)
 
     # 1: Segregate by year/var

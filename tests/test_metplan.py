@@ -118,3 +118,11 @@ def test_dataset_time_encoding(met_run, cable_time_reference):
     encoding = output_dataset["time"].encoding
     assert encoding["units"] == cable_time_reference["units"]
     assert encoding["calendar"] == cable_time_reference["calendar"]
+
+def test_output_has_cable_lat_lon_dims(met_run):
+    """Written variables use lat/lon dimensions with lat/lon coordinates."""
+    output_dataset, _ = met_run
+    for var in output_dataset.data_vars:
+        assert {"lat", "lon"} <= set(output_dataset[var].dims)
+    assert output_dataset["lat"].dims == ("lat",)
+    assert output_dataset["lon"].dims == ("lon",)

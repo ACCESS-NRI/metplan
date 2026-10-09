@@ -1,3 +1,24 @@
+# Dims/Coordinates
+# Based on:
+# https://github.com/CABLE-LSM/CABLE/blob/520274fd2932a1211ba161d8893f7544a689130d/src/offline/cable_input.F90#L522
+# https://github.com/CABLE-LSM/CABLE/blob/520274fd2932a1211ba161d8893f7544a689130d/src/offline/cable_metutils.F90#L33
+# Currently, require dimensions variables `lat`/`lon` (as backup to `x`/`y`)  and coordinates `lat`/`lon`
+# Better not to mix up different names for dimensions/coordinates
+
+lat:
+  type: coordinate
+  dim: y
+  input_param:
+    - latitude
+    - lat
+
+lon:
+  type: coordinate
+  dim: x
+  input_param:
+    - longitude
+    - lon
+
 # Standard Params
 
 Tair:
