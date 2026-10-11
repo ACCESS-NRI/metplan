@@ -172,6 +172,12 @@ def run_met(config, dataset=None):
         )
     )
 
+    # NOTE: CABLE-specific settings
+
+    # CABLE reads variables as Fortran (x, y, time), ie. netCDF (time, lat, lon)
+    dataset = dataset.transpose("time", "lat", "lon", missing_dims="ignore")
+
+    # CABLE time-steps
     dataset["time"].encoding["units"] = "hours since 1900-01-01 01:00:00"
     dataset["time"].encoding["calendar"] = "proleptic_gregorian"
 
