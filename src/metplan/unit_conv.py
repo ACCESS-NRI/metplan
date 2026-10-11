@@ -47,6 +47,10 @@ class UnitConversion:
             da = da.metpy.quantify()
             da = da.metpy.convert_units(new_unit)
             da = da.metpy.dequantify()
+            # By default pint writes long form of unit
+            # keep the requested string, as CABLE matches units by prefix
+            # NOTE: Once CABLE code is standardised, ideally remove this line
+            da.attrs["units"] = new_unit
         return da
 
     @staticmethod

@@ -7,7 +7,7 @@ Tair:
     - temp
   unit:
     kelvin
-SWDown:
+SWdown:
   type: standard
   input_param:
     - srad
@@ -68,7 +68,7 @@ tmin:
   type: conversion
 
 # Optional Params
-LWDown:
+LWdown:
   type: optional
   calc:
     - deps:

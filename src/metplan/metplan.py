@@ -2,6 +2,8 @@
 
 import os
 import time
+from collections.abc import Collection, Hashable
+from typing import Any
 
 import xarray as xr
 import yaml
@@ -14,6 +16,8 @@ from metplan.unit_conv import UnitConversion
 from metplan.utils.files import list_nc_files
 from metplan.utils.logger import get_logger
 
+import numpy as np
+
 xr.set_options(keep_attrs=True)
 logger = get_logger()
 
@@ -21,16 +25,33 @@ OUTPUT_FILE_FORMAT = "NETCDF4"
 CONFIG_FILE_NAME = "config.yaml"
 PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
 
+def get_rename_param_criteria(params, param_map, coords=()) -> dict[Hashable, str]:
+    """ Data variables are renamed by standard/optional/conversion entries,
+    coordinates/dimensions by `coordinate` entries (eg. latitude -> lat) based
+    on param_map.yaml
 
-def get_rename_param_criteria(params, param_map):
-    """All input_param act as keys with the original key as value."""
-    param_criteria = {}
+    Parameters
+    ----------
+    params : 
+        Data variable names present in the input dataset.
+    param_map : 
+        Parameter map loaded from `param_map.yaml`.
+    coords : 
+        Coordinate and dimension names present in the input dataset,
+        by default ().
+
+    Returns
+    -------
+    dict[Hashable, str]
+        Mapping of input name -> name in param_map
+    """
+    param_criteria: dict[Hashable, str] = {}
     for param, param_info in param_map.items():
+        candidates = coords if param_info.get("type") == "coordinate" else params
         for input_value in param_info.get("input_param", []):
-            if input_value in params:
+            if input_value in candidates:
                 param_criteria[input_value] = param
     return param_criteria
-
 
 def get_unit_conv_params(param_map):
     """Units conversions are to be done for all params having unit in mapping."""
@@ -82,7 +103,11 @@ def run_met(config, dataset=None):
     tic = time.perf_counter()
 
     # 1. Rename parameters
-    param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
+    param_criteria = get_rename_param_criteria(
+        list(dataset.data_vars),
+        param_map,
+        coords=list(set(dataset.coords) | set(dataset.dims)),
+    )
     dataset = dataset.rename(param_criteria)
 
     # 1: Segregate by year/var
@@ -149,6 +174,12 @@ def run_met(config, dataset=None):
         )
     )
 
+    # NOTE: CABLE-specific settings
+
+    # CABLE reads variables as Fortran (x, y, time), ie. netCDF (time, lat, lon)
+    dataset = dataset.transpose("time", "lat", "lon", missing_dims="ignore")
+
+    # CABLE time-steps
     dataset["time"].encoding["units"] = "hours since 1900-01-01 01:00:00"
     dataset["time"].encoding["calendar"] = "proleptic_gregorian"
 
@@ -167,6 +198,15 @@ def run_met(config, dataset=None):
         dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
     logger.info("Saved dataset - Check log.txt for warnings")
+
+    # Land-sea mask for CABLE GSWP3 mode (gswpfile%mask), on (lat, lon).
+    # GSWP3 convention: 0 = land, 1 = sea (CABLE inverts it); all land for now
+    landsea = xr.DataArray(
+        np.zeros((dataset.sizes["lat"], dataset.sizes["lon"]), dtype=np.int32),
+        coords={"lat": dataset["lat"], "lon": dataset["lon"]},
+        name="landsea",
+    )
+    landsea.to_netcdf(config.get("output_dir") + "/landsea.nc", **config.get("to_netcdf"))
 
     toc = time.perf_counter()
     print(f"Completed in {toc - tic:0.4f} seconds")
