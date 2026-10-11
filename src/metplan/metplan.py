@@ -16,6 +16,8 @@ from metplan.unit_conv import UnitConversion
 from metplan.utils.files import list_nc_files
 from metplan.utils.logger import get_logger
 
+import numpy as np
+
 xr.set_options(keep_attrs=True)
 logger = get_logger()
 
@@ -196,6 +198,15 @@ def run_met(config, dataset=None):
         dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
     logger.info("Saved dataset - Check log.txt for warnings")
+
+    # Land-sea mask for CABLE GSWP3 mode (gswpfile%mask), on (lat, lon).
+    # GSWP3 convention: 0 = land, 1 = sea (CABLE inverts it); all land for now
+    landsea = xr.DataArray(
+        np.zeros((dataset.sizes["lat"], dataset.sizes["lon"]), dtype=np.int32),
+        coords={"lat": dataset["lat"], "lon": dataset["lon"]},
+        name="landsea",
+    )
+    landsea.to_netcdf(config.get("output_dir") + "/landsea.nc", **config.get("to_netcdf"))
 
     toc = time.perf_counter()
     print(f"Completed in {toc - tic:0.4f} seconds")
