@@ -66,13 +66,13 @@ Rainf:
     - rain
     - tp
   unit:
-    mm s-1
+    mm/s
     # kg m-2 s-1 (JULES)
 
 Wind:
   type: standard
   unit:
-    m s-1
+    m/s
   calc:
   - deps:
       wind_e,wind_n
@@ -96,14 +96,14 @@ wind_e:
   type: 
     conversion
   unit:
-    m s-1
+    m/s
   input_param:
     - u10
 wind_n:
   type: 
     conversion
   unit:
-    m s-1
+    m/s
   input_param:
     - v10
 
@@ -146,7 +146,7 @@ PSurf:
 Snowf:
   type: optional
   unit:
-    mm s-1
+    mm/s
   input_param:
     - sf
   calc:

@@ -257,7 +257,7 @@ def test_ord_deps():
     """Fixture providing expected ordered dependencies."""
     return [
         ("Qair", ["vpd", "Tair"], vpd_tair_sh),
-        ("LWDown", ["Tair"], calc_lwdown_swinbank),
+        ("LWdown", ["Tair"], calc_lwdown_swinbank),
     ]
 
 

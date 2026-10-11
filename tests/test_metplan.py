@@ -13,7 +13,7 @@ import xarray as xr
 from dask.distributed import Client, LocalCluster
 
 import metplan.utils as mu
-from metplan.metplan import run_met
+from metplan.metplan import param_map, run_met
 from metplan.utils.logger import get_logger
 
 # Receive consistent results with the test output file
@@ -97,10 +97,12 @@ def test_sample_dataset(met_run):
     if expected_dataset is None:
         pytest.skip("No expected output for this input")
     for var in output_dataset.data_vars:
+        # Check units
+        assert output_dataset[var].attrs["units"] == param_map[var]["unit"], var
+        # Check values upto tolerance
         xr.testing.assert_allclose(
             output_dataset[var], expected_dataset[var], rtol=tolerances[var]
         )
-
 
 @pytest.fixture(scope="module")
 def cable_time_reference():
