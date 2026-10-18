@@ -192,6 +192,12 @@ def run_met(config, dataset=None):
 
     for var in dataset.data_vars:
         output_filename = config.get("output_dir") + f"/{var}.nc"
+        logger.debug(f"Saving var: {var}")
+        # xarray on netcdf4 engine unpacks scale_factor/add_offset, but
+        # keeps the attributes
+        for key in ("scale_factor", "add_offset"):
+            dataset[var].encoding.pop(key, None)
+        output_filename = config.get("output_dir") + f"/{var}.nc"
 
         logger.debug(f"Saving var: {var}")
         dataset[var].encoding.update(config.get("encoding"))
