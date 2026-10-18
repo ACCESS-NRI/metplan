@@ -11,8 +11,8 @@ directories:
 
 hourly_acc:
   # - Snowf
-  - SWDown
-  - LWDown
+  - SWdown
+  - LWdown
   - Rainf
 
 output_file: /scratch/tm70/ag9761/met_data/temp3
