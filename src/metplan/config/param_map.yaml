@@ -163,6 +163,13 @@ CO2air:
     - func:
         default_co2
 
+          
+landsea:
+  type: standard
+  units: (0 - 1)
+  input_param:
+    - lsm
+
 # Only for flux-site runs
 # patchfrac:
 #   type: optional

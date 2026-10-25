@@ -65,6 +65,25 @@ def get_unit_conv_params(param_map):
 with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
 
+def preprocess_land_sea_mask(ds: xr.Dataset) -> xr.Dataset:
+    """Make the land-sea mask file compatible with the met forcing files,
+    since it could be unidimensional with time.
+    """
+    lsm_names = param_map["landsea"]["input_param"]
+    if not any(name in ds for name in lsm_names):
+        return ds
+
+    if "time" in ds.dims:
+        ds = ds.squeeze("time", drop=True)
+
+    return ds.assign_coords(
+        {
+            dim: ds[dim].astype("float64")
+            for dim in ds.dims
+            if dim in ds.coords and ds[dim].dtype == "float32"
+        }
+    )
+
 
 def run_met(config, dataset=None):
     """Run preprocessor for meteorological forcing dataset(s)."""
@@ -87,8 +106,9 @@ def run_met(config, dataset=None):
             file_list,
             compat="override",
             coords="minimal",
+            preprocess=preprocess_land_sea_mask,
             chunks={"time": 24, "longitude": -1, "latitude": -1},
-            engine="h5netcdf",
+            engine="netcdf4",
             parallel=True,
         )
         logger.info("Loaded combined dataset")
@@ -204,15 +224,6 @@ def run_met(config, dataset=None):
         dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
     logger.info("Saved dataset - Check log.txt for warnings")
-
-    # Land-sea mask for CABLE GSWP3 mode (gswpfile%mask), on (lat, lon).
-    # GSWP3 convention: 0 = land, 1 = sea (CABLE inverts it); all land for now
-    landsea = xr.DataArray(
-        np.zeros((dataset.sizes["lat"], dataset.sizes["lon"]), dtype=np.int32),
-        coords={"lat": dataset["lat"], "lon": dataset["lon"]},
-        name="landsea",
-    )
-    landsea.to_netcdf(config.get("output_dir") + "/landsea.nc", **config.get("to_netcdf"))
 
     toc = time.perf_counter()
     print(f"Completed in {toc - tic:0.4f} seconds")
