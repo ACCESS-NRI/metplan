@@ -2,6 +2,8 @@
 
 import os
 import time
+from collections.abc import Collection, Hashable
+from typing import Any
 
 import xarray as xr
 import yaml
@@ -14,6 +16,8 @@ from metplan.unit_conv import UnitConversion
 from metplan.utils.files import list_nc_files
 from metplan.utils.logger import get_logger
 
+import numpy as np
+
 xr.set_options(keep_attrs=True)
 logger = get_logger()
 
@@ -21,16 +25,33 @@ OUTPUT_FILE_FORMAT = "NETCDF4"
 CONFIG_FILE_NAME = "config.yaml"
 PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
 
+def get_rename_param_criteria(params, param_map, coords=()) -> dict[Hashable, str]:
+    """ Data variables are renamed by standard/optional/conversion entries,
+    coordinates/dimensions by `coordinate` entries (eg. latitude -> lat) based
+    on param_map.yaml
 
-def get_rename_param_criteria(params, param_map):
-    """All input_param act as keys with the original key as value."""
-    param_criteria = {}
+    Parameters
+    ----------
+    params : 
+        Data variable names present in the input dataset.
+    param_map : 
+        Parameter map loaded from `param_map.yaml`.
+    coords : 
+        Coordinate and dimension names present in the input dataset,
+        by default ().
+
+    Returns
+    -------
+    dict[Hashable, str]
+        Mapping of input name -> name in param_map
+    """
+    param_criteria: dict[Hashable, str] = {}
     for param, param_info in param_map.items():
+        candidates = coords if param_info.get("type") == "coordinate" else params
         for input_value in param_info.get("input_param", []):
-            if input_value in params:
+            if input_value in candidates:
                 param_criteria[input_value] = param
     return param_criteria
-
 
 def get_unit_conv_params(param_map):
     """Units conversions are to be done for all params having unit in mapping."""
@@ -43,6 +64,25 @@ def get_unit_conv_params(param_map):
 
 with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
+
+def preprocess_land_sea_mask(ds: xr.Dataset) -> xr.Dataset:
+    """Make the land-sea mask file compatible with the met forcing files,
+    since it could be unidimensional with time.
+    """
+    lsm_names = param_map["landsea"]["input_param"]
+    if not any(name in ds for name in lsm_names):
+        return ds
+
+    if "time" in ds.dims:
+        ds = ds.squeeze("time", drop=True)
+
+    return ds.assign_coords(
+        {
+            dim: ds[dim].astype("float64")
+            for dim in ds.dims
+            if dim in ds.coords and ds[dim].dtype == "float32"
+        }
+    )
 
 
 def run_met(config, dataset=None):
@@ -66,8 +106,9 @@ def run_met(config, dataset=None):
             file_list,
             compat="override",
             coords="minimal",
+            preprocess=preprocess_land_sea_mask,
             chunks={"time": 24, "longitude": -1, "latitude": -1},
-            engine="h5netcdf",
+            engine="netcdf4",
             parallel=True,
         )
         logger.info("Loaded combined dataset")
@@ -82,7 +123,11 @@ def run_met(config, dataset=None):
     tic = time.perf_counter()
 
     # 1. Rename parameters
-    param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
+    param_criteria = get_rename_param_criteria(
+        list(dataset.data_vars),
+        param_map,
+        coords=list(set(dataset.coords) | set(dataset.dims)),
+    )
     dataset = dataset.rename(param_criteria)
 
     # 1: Segregate by year/var
@@ -149,6 +194,12 @@ def run_met(config, dataset=None):
         )
     )
 
+    # NOTE: CABLE-specific settings
+
+    # CABLE reads variables as Fortran (x, y, time), ie. netCDF (time, lat, lon)
+    dataset = dataset.transpose("time", "lat", "lon", missing_dims="ignore")
+
+    # CABLE time-steps
     dataset["time"].encoding["units"] = "hours since 1900-01-01 01:00:00"
     dataset["time"].encoding["calendar"] = "proleptic_gregorian"
 
@@ -160,6 +211,12 @@ def run_met(config, dataset=None):
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
     for var in dataset.data_vars:
+        output_filename = config.get("output_dir") + f"/{var}.nc"
+        logger.debug(f"Saving var: {var}")
+        # xarray on netcdf4 engine unpacks scale_factor/add_offset, but
+        # keeps the attributes
+        for key in ("scale_factor", "add_offset"):
+            dataset[var].encoding.pop(key, None)
         output_filename = config.get("output_dir") + f"/{var}.nc"
 
         logger.debug(f"Saving var: {var}")

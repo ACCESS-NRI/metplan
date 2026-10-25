@@ -1,3 +1,24 @@
+# Dims/Coordinates
+# Based on:
+# https://github.com/CABLE-LSM/CABLE/blob/520274fd2932a1211ba161d8893f7544a689130d/src/offline/cable_input.F90#L522
+# https://github.com/CABLE-LSM/CABLE/blob/520274fd2932a1211ba161d8893f7544a689130d/src/offline/cable_metutils.F90#L33
+# Currently, require dimensions variables `lat`/`lon` (as backup to `x`/`y`)  and coordinates `lat`/`lon`
+# Better not to mix up different names for dimensions/coordinates
+
+lat:
+  type: coordinate
+  dim: y
+  input_param:
+    - latitude
+    - lat
+
+lon:
+  type: coordinate
+  dim: x
+  input_param:
+    - longitude
+    - lon
+
 # Standard Params
 
 Tair:
@@ -8,7 +29,7 @@ Tair:
     - t2m
   unit:
     kelvin
-SWDown:
+SWdown:
   type: standard
   input_param:
     - srad
@@ -45,13 +66,13 @@ Rainf:
     - rain
     - tp
   unit:
-    mm s-1
+    mm/s
     # kg m-2 s-1 (JULES)
 
 Wind:
   type: standard
   unit:
-    m s-1
+    m/s
   calc:
   - deps:
       wind_e,wind_n
@@ -75,14 +96,14 @@ wind_e:
   type: 
     conversion
   unit:
-    m s-1
+    m/s
   input_param:
     - u10
 wind_n:
   type: 
     conversion
   unit:
-    m s-1
+    m/s
   input_param:
     - v10
 
@@ -100,7 +121,7 @@ tmin:
   type: conversion
 
 # Optional Params
-LWDown:
+LWdown:
   type: optional
   input_param:
     - strd
@@ -125,7 +146,7 @@ PSurf:
 Snowf:
   type: optional
   unit:
-    mm s-1
+    mm/s
   input_param:
     - sf
   calc:
@@ -141,6 +162,13 @@ CO2air:
   calc:
     - func:
         default_co2
+
+          
+landsea:
+  type: standard
+  units: (0 - 1)
+  input_param:
+    - lsm
 
 # Only for flux-site runs
 # patchfrac:

@@ -8,7 +8,7 @@ encoding:
 # Write arguments
 to_netcdf:
   format: NETCDF4
-  engine: h5netcdf
+  engine: netcdf4
 
 # Cluster settings for running on PBS (NCI)
 cluster_pbs:
