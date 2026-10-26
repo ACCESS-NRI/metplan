@@ -132,7 +132,7 @@ def dispatch(parsed_args: argparse.ArgumentParser):
 def cli():
     """CLI entrypoint for the system."""
 
-    # Parse intially to get the optional user config path
+    # Parse CLI arguments and load config.
     args = parse_args(get_parser(run_met))
 
     # Set up the logger, remove verbosity

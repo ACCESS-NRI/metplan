@@ -194,8 +194,7 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     return dataset
 
 
-def run_met(
-    config: dict, var: str = None) -> xr.Dataset | None:
+def run_met(config: dict, var: str = None) -> xr.Dataset | None:
     """Wrapper for singular/multivariate processing.
 
     Parameters
