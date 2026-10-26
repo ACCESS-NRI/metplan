@@ -78,12 +78,6 @@ def load_dataset(config):
         parallel=True,
     )
     logger.info("Loaded combined dataset")
-
-    # NOTE: Ideally remove after appropriate compression, otherwise can put in docs as WIP
-    if config.get("debug").get("single_day"):
-        dataset = dataset.sel(
-            time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True
-        )
     logger.debug(dataset)
     logger.debug(dataset.chunks)
     return dataset
@@ -181,9 +175,7 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     return dataset
 
 
-def run_met(
-    config: dict, var: str = None, dataset: xr.Dataset = None
-) -> xr.Dataset | None:
+def run_met(config: dict, var: str = None) -> xr.Dataset | None:
     """Wrapper for singular/multivariate processing.
 
     Parameters
@@ -192,8 +184,6 @@ def run_met(
         Configuration.
     var : str, optional
         Variable to process, by default None (which loads from config)
-    dataset : xr.Dataset, optional
-        Pre-loaded dataset, by default None (which loads from config)
 
     Returns
     -------
@@ -206,9 +196,8 @@ def run_met(
     with open(PARAM_MAP_FILE_NAME) as file:
         param_map = yaml.safe_load(file)
 
-    if dataset is None:
-        logger.debug("No dataset provided, loading.")
-        dataset = load_dataset(config)
+    logger.debug("Loading dataset.")
+    dataset = load_dataset(config)
 
     # 1. Rename parameters
     logger.debug("Getting renaming param criteria")

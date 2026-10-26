@@ -103,9 +103,11 @@ def parse_args(parser: argparse.ArgumentParser, arg_list: list = []) -> dict:
         parser.print_help()
         sys.exit(1)
 
-    # Ensure that there is no var set if all is set
-    args = vars(parser.parse_args(arg_list))
-    args["var"] = None if args.pop("all") else args["var"]
+    # Ensure that "--all" is treated correctly as None when absent
+    args = vars(parser.parse_args(arg_list if arg_list else None))
+
+    # Remove the "all" keyword, assume "var" is None if not otherwise specified
+    args.pop("all")
 
     # Attach the user config (needs to absolute for submission)
     if args["config"]:

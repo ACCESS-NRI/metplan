@@ -60,6 +60,6 @@ def set_log_level(level: str):
     # Ensure uppercase and valid
     level = level.upper()
     assert level in logging.getLevelNamesMapping().keys()
-    
+
     # Set and ignore return
     _ = get_logger(level=level)

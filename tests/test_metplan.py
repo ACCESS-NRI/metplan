@@ -58,7 +58,7 @@ tolerances = {
     scope="module",
     params=[
         ("tests/data/test_input.nc", "tests/data/test_output.nc"),
-        ("sample_xarray_data", None),
+        # ("sample_xarray_data", None),
     ],
 )
 def met_run(request):
@@ -71,21 +71,20 @@ def met_run(request):
     print(config_path)
     config = mu.load_config(user_config=config_path)
 
+    # Override the default with the test data
+    config["directories"] = [input_path]
+    expected_dataset = xr.open_dataset(expected_path)
+
     with tempfile.TemporaryDirectory() as td:
 
-        client, cluster = mu.start_dask_client(config)
-
+        # Write to the temp space
         config["output_dir"] = td
 
-        if input_path.endswith(".nc"):
-            test_dataset = xr.open_dataset(input_path, engine="h5netcdf")
-        else:
-            test_dataset = request.getfixturevalue(input_path)
-        expected_dataset = (
-            xr.open_dataset(expected_path, engine="h5netcdf") if expected_path else None
-        )
+        # Start dask
+        client, cluster = mu.start_dask_client(config)
 
-        output_dataset = run_met(config, var="SWDown", dataset=test_dataset)
+        # Run
+        output_dataset = run_met(config, var="SWDown")
 
         yield output_dataset, expected_dataset
 
