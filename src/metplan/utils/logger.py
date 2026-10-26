@@ -47,3 +47,19 @@ def get_logger(name="metplan", level="info"):
 def is_verbose():
     """Return True if verbose output is enabled, False otherwise."""
     return get_logger().getEffectiveLevel() == logging.DEBUG
+
+
+def set_log_level(level: str):
+    """Set the log level explicitly, even before acquiring the logger.
+
+    Parameters
+    ----------
+    level : str
+        Level string, must be a valid logging level.
+    """
+    # Ensure uppercase and valid
+    level = level.upper()
+    assert level in logging.getLevelNamesMapping().keys()
+    
+    # Set and ignore return
+    _ = get_logger(level=level)
