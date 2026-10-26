@@ -78,7 +78,7 @@ def load_config(user_config=None) -> dict:
         logger.debug(f"Loading config {cp}")
 
         # Only attempt load if it exists and is correct format
-        if os.path.isfile(cp) and cp.suffix in [".yml", ".yaml"]:
+        if Path(cp).is_file() and cp.suffix in [".yml", ".yaml"]:
 
             # Read the raw content
             raw = open(cp, "r").read()

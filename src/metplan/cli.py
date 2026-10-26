@@ -105,13 +105,12 @@ def parse_args(parser: argparse.ArgumentParser, arg_list: list = []) -> dict:
         parser.print_help()
         sys.exit(1)
 
-    # Ensure that "--all" is treated correctly as None when absent
     args = vars(parser.parse_args(arg_list if arg_list else None))
 
-    # Remove the "all" keyword, assume "var" is None if not otherwise specified
+    # Remove the "all" keyword, argparse ensures that "var" is None if `-all` is specified on the command line.
     args.pop("all")
 
-    # Attach the user config (needs to absolute for submission)
+    # Attach the user config (needs absolute path for submission)
     if args["config"]:
         args["config"] = mu.load_config(user_config=os.path.abspath(args["config"]))
 
