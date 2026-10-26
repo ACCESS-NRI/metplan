@@ -94,6 +94,22 @@ def load_config(user_config=None) -> dict:
     return config
 
 
+def load_param_map(param_map_path) -> dict:
+    """Load the parameter mapping file
+
+    Parameters
+    ----------
+    param_map_path : str
+        Path to the parameter mapping.
+
+    Returns
+    -------
+    dict
+        Parameter mapping
+    """
+    return yaml.safe_load(open(param_map_path, "r"))
+
+
 def start_dask_client(config: dict) -> tuple[Client, LocalCluster]:
     """Start a dask client for processing
 

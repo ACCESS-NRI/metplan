@@ -7,7 +7,6 @@ import sys
 import time
 
 import xarray as xr
-import yaml
 from hpcpy import get_client
 
 import metplan.utils as mu
@@ -43,9 +42,24 @@ def get_unit_conv_params(param_map):
     ]
 
 
-def get_var_dependencies(dep_list, dataset):
+def get_var_dependencies(dep_list, dataset: xr.Dataset) -> list:
+    """Assemble the variable dependencies.
+
+    Parameters
+    ----------
+    dep_list : list
+        Dependency list
+    dataset : xr.Dataset
+        Dataset
+
+    Returns
+    -------
+    list
+        Variable dependencies.
+    """
     var_list = list(map(operator.itemgetter(0), dep_list))
     variables = set(var_list).union(dataset.data_vars)
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
     return [
         var
         for var in variables
@@ -53,18 +67,22 @@ def get_var_dependencies(dep_list, dataset):
     ]
 
 
-# TODO: This should be loaded explicitly, not inline like this.
-with open(PARAM_MAP_FILE_NAME) as file:
-    param_map = yaml.safe_load(file)
+def load_dataset(config: dict) -> xr.Dataset:
+    """Load the dataset.
 
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary.
 
-def load_dataset(config):
-    ## REVIEW: Have validator like cerberus
+    Returns
+    -------
+    xr.Dataset
+        Dataset
+    """
     file_list = []
-    print("here")
-    print(config)
     for dir in config.get("directories"):
-        print(dir)
+        logger.debug(f"Adding {dir}")
         file_list += list_nc_files(dir)
 
     ## TODO: Look more into parameter options for open_mfdataset
@@ -110,6 +128,7 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
 
     # 3. Unit conversions
     ## List of all params for unit conversions
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
     params = get_unit_conv_params(param_map)
     param_conv = UnitConversion(params)
 
@@ -175,7 +194,8 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     return dataset
 
 
-def run_met(config: dict, var: str = None) -> xr.Dataset | None:
+def run_met(
+    config: dict, var: str = None) -> xr.Dataset | None:
     """Wrapper for singular/multivariate processing.
 
     Parameters
@@ -193,8 +213,7 @@ def run_met(config: dict, var: str = None) -> xr.Dataset | None:
     logger = get_logger()
 
     logger.debug("Loading param_map")
-    with open(PARAM_MAP_FILE_NAME) as file:
-        param_map = yaml.safe_load(file)
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
 
     logger.debug("Loading dataset.")
     dataset = load_dataset(config)
@@ -204,7 +223,6 @@ def run_met(config: dict, var: str = None) -> xr.Dataset | None:
     param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
     dataset = dataset.rename(param_criteria)
 
-   # 2. Generate dependency list
     logger.debug("Generating dependency list")
     dep_list = generate_calculations(dataset, param_map)
 
