@@ -86,6 +86,8 @@ def get_parser(default_app: callable) -> argparse.ArgumentParser:
 def parse_args(parser: argparse.ArgumentParser, arg_list: list = []) -> dict:
     """Parse the arguments for the given parser, displaying help and exiting if no args.
 
+    Also loads the user config.
+
     Parameters
     ----------
     parser : argparse.ArgumentParser
