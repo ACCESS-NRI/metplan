@@ -215,6 +215,7 @@ def run_met(
     param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
     dataset = dataset.rename(param_criteria)
 
+   # 2. Generate dependency list
     logger.debug("Generating dependency list")
     dep_list = generate_calculations(dataset, param_map)
 
