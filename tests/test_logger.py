@@ -1,32 +1,32 @@
 import logging
 
+import pytest
+
 import metplan.utils.logger as ml
 
 
-def test_set_level_outside():
+@pytest.fixture(params=["CRITICAL", "DEBUG"])
+def log_level(request):
+    """Provide a level, resetting the logger before and after each test."""
+    ml.get_logger().setLevel(logging.NOTSET)
+    yield request.param
+    ml.get_logger().setLevel(logging.NOTSET)
+
+
+def test_set_level_outside(log_level):
     """Test setting the level outside of getting a logger."""
-    ml.get_logger().setLevel(logging.NOTSET)
-    level = "CRITICAL"
-    level_num = logging.getLevelNamesMapping()[level]
-    ml.set_log_level(level)
+    level_num = logging.getLevelNamesMapping()[log_level]
+    ml.set_log_level(log_level)
     assert ml.get_logger().getEffectiveLevel() == level_num
-    # Unset the level for future tests.
-    ml.get_logger().setLevel(logging.NOTSET)
 
 
-def test_get_logger():
-    """Test get_logger."""
+def test_get_logger(log_level):
+    """Test get_logger the most common way it is accessed."""
     assert isinstance(ml.get_logger(), logging.Logger)
-    # Unset the level for future tests.
-    ml.get_logger().setLevel(logging.NOTSET)
 
 
-def test_explicit_level():
+def test_explicit_level(log_level):
     """Test get_logger with explicit level."""
-    ml.get_logger().setLevel(logging.NOTSET)
-    level = "DEBUG"
-    logger = ml.get_logger(level=level)
-    level_num = logging.getLevelNamesMapping()[level]
+    logger = ml.get_logger(level=log_level)
+    level_num = logging.getLevelNamesMapping()[log_level]
     assert logger.getEffectiveLevel() == level_num
-    # Unset the level for future tests.
-    ml.get_logger().setLevel(logging.NOTSET)

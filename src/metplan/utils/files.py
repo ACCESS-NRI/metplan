@@ -16,8 +16,8 @@ def list_nc_files(d):
     return files
 
 
-def list_variables(paths: str | list) -> list:
-    """List the variables in the provided NetCDF files.
+def list_unique_variables(paths: str | list) -> list:
+    """List the unique variables in the provided NetCDF files.
 
     Parameters
     ----------

@@ -42,8 +42,8 @@ def get_unit_conv_params(param_map):
     ]
 
 
-def get_var_dependencies(dep_list, dataset: xr.Dataset) -> list:
-    """Assemble the variable dependencies.
+def get_derivable_var_list(dep_list, dataset: xr.Dataset) -> list:
+    """Creates the list of variables needed by CABLE that are either in the input dataset or can be calculated from the available variables.
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def get_var_dependencies(dep_list, dataset: xr.Dataset) -> list:
     Returns
     -------
     list
-        Variable dependencies.
+        List of derivable variables.
     """
     var_list = list(map(operator.itemgetter(0), dep_list))
     variables = set(var_list).union(dataset.data_vars)
@@ -189,7 +189,7 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     logger.info(f"Ouput Filepath = {output_filename}")
 
     toc = time.perf_counter()
-    print(f"Completed in {toc - tic:0.4f} seconds")
+    logger.debug(f"Completed in {toc - tic:0.4f} seconds")
 
     return dataset
 
@@ -247,7 +247,7 @@ def run_met(config: dict, var: str = None) -> xr.Dataset | None:
         logger.debug(f"metplan_path = {metplan_path}")
         logger.debug(f"jobscript_path = {jobscript_path}")
 
-        for var in get_var_dependencies(dep_list, dataset):
+        for var in get_derivable_var_list(dep_list, dataset):
 
             metplan_path = shutil.which(sys.argv[0])
             job = client.submit(

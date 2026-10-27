@@ -3,6 +3,8 @@ from metpy.units import units
 from pint import Unit
 from xarray import DataArray
 
+from metplan.utils.logger import get_logger
+
 
 def rain_conversion(units: Unit, depth_time: Unit):
     """Conversion from precipitation in terms of depth
@@ -14,6 +16,7 @@ class UnitConversion:
     def __init__(self, params: list[str]) -> None:
         self.contexts = {}
         self._add_unit_conversions(params)
+        self.logger = get_logger()
 
     def _add_unit_conversions(self, params: list[str]) -> None:
         """Define additional unit conversions other than default ones
@@ -59,7 +62,7 @@ class UnitConversion:
 
     def _monthly_conversions(self, da: DataArray) -> DataArray:
         """Convert monthly to daily data."""
-        print(f"Monthly conversions for {da.name}")
+        self.logger.debug(f"Monthly conversions for {da.name}")
         monthly_units = pint.util.to_units_container(units(da.units))
         daily_units = monthly_units.rename("month", "day")
         gb = da.groupby("time.days_in_month")
@@ -71,7 +74,7 @@ class UnitConversion:
 
     def convert_param(self, da: DataArray, out_units: str) -> DataArray:
         """Convert parameter into necessary units."""
-        print(f"Converting param: {da.name}")
+        self.logger.debug(f"Converting param: {da.name}")
         with units.context(da.name):
             if "month" in str(da.units):
                 da = self._monthly_conversions(da)

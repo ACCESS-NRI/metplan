@@ -68,7 +68,6 @@ def met_run(request):
     os.environ["PROJECT"] = "TEST_PROJECT"
     os.environ["USER"] = "TEST_USER"
     config_path = "tests/data/test_config.yaml"
-    print(config_path)
     config = mu.load_config(user_config=config_path)
 
     # Override the default with the test data
