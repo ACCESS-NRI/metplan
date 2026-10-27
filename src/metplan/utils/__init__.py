@@ -63,19 +63,22 @@ def load_config(user_config=None) -> dict:
     dict
         Final configuation after all overrides.
     """
-
+    logger = get_logger()
     # Load the default configuration
     config_paths = [get_installed_root() / "config" / "defaults.yml"]
 
     if user_config and Path(user_config).is_file():
+        logger.debug(f"Appending user config {user_config}")
         config_paths.append(Path(user_config))
 
     # Iteratively load the configuration in order
     config = dict()
     for cp in config_paths:
 
+        logger.debug(f"Loading config {cp}")
+
         # Only attempt load if it exists and is correct format
-        if os.path.isfile(cp) and cp.suffix in [".yml", ".yaml"]:
+        if Path(cp).is_file() and cp.suffix in [".yml", ".yaml"]:
 
             # Read the raw content
             raw = open(cp, "r").read()
@@ -85,7 +88,26 @@ def load_config(user_config=None) -> dict:
             _config = yaml.safe_load(raw_env)
             config = deep_update(config, _config)
 
+    # Add the config path to the dict
+    config["user_config"] = user_config
+
     return config
+
+
+def load_param_map(param_map_path) -> dict:
+    """Load the parameter mapping file
+
+    Parameters
+    ----------
+    param_map_path : str
+        Path to the parameter mapping.
+
+    Returns
+    -------
+    dict
+        Parameter mapping
+    """
+    return yaml.safe_load(open(param_map_path, "r"))
 
 
 def start_dask_client(config: dict) -> tuple[Client, LocalCluster]:

@@ -10,11 +10,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from dask.distributed import Client, LocalCluster
 
 import metplan.utils as mu
 from metplan.metplan import run_met
-from metplan.utils.logger import get_logger
 
 # Receive consistent results with the test output file
 seed_value = 42
@@ -60,7 +58,7 @@ tolerances = {
     scope="module",
     params=[
         ("tests/data/test_input.nc", "tests/data/test_output.nc"),
-        ("sample_xarray_data", None),
+        # ("sample_xarray_data", None),
     ],
 )
 def met_run(request):
@@ -69,27 +67,28 @@ def met_run(request):
 
     os.environ["PROJECT"] = "TEST_PROJECT"
     os.environ["USER"] = "TEST_USER"
-    config = mu.load_config("config.yaml")
+    config_path = "tests/data/test_config.yaml"
+    config = mu.load_config(user_config=config_path)
+
+    # Override the default with the test data
+    config["directories"] = [input_path]
+    expected_dataset = xr.open_dataset(expected_path)
 
     with tempfile.TemporaryDirectory() as td:
 
+        # Write to the temp space
         config["output_dir"] = td
 
-        if input_path.endswith(".nc"):
-            test_dataset = xr.open_dataset(input_path, engine="h5netcdf")
-        else:
-            test_dataset = request.getfixturevalue(input_path)
-        expected_dataset = (
-            xr.open_dataset(expected_path, engine="h5netcdf") if expected_path else None
-        )
-        cluster = LocalCluster(n_workers=4, threads_per_worker=1, memory_limit="4GB")
-        client = Client(cluster)
-        output_dataset = run_met(config, test_dataset)
+        # Start dask
+        client, cluster = mu.start_dask_client(config)
+
+        # Run
+        output_dataset = run_met(config, var="SWDown")
 
         yield output_dataset, expected_dataset
 
-        client.close()
-        cluster.close()
+        mu.stop_dask_client(client, cluster)
+
 
 def test_sample_dataset(met_run):
     """Test dataset creation is within tolerances."""

@@ -10,10 +10,9 @@ directories:
   # - /g/data/zz93/era5-land/reanalysis/sf/1950/sf_era5-land_oper_sfc_19500101-19500131.nc
 
 hourly_acc:
-  # - Snowf
   - SWDown
   - LWDown
   - Rainf
 
-output_file: /scratch/tm70/ag9761/met_data/temp3
-output_folder: /scratch/tm70/ag9761/met_data
+output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan
+# output_file: test.nc

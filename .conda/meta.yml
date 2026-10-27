@@ -21,7 +21,8 @@ requirements:
     - pip
     - versioneer
   run:
-    - dask==2025.5
+    - dask>=2025.5
+    - distributed
     - h5netcdf==1.8.1
     - accessnri::hpcpy==0.9.0
     - metpy==1.7.1
