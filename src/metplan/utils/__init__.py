@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 from distributed import Client, LocalCluster
-from hpcpy.utilities import interpolate_string_template
+import hpcpy.utilities as hu
 
 from metplan.utils.logger import get_logger
 
@@ -81,7 +81,7 @@ def load_config(user_config=None) -> dict:
 
             # Read the raw content
             raw = open(cp, "r").read()
-            raw_env = interpolate_string_template(raw, **os.environ)
+            raw_env = hu.interpolate_string_template(raw, **os.environ)
 
             # Parse the config, interpolating environment vars
             _config = yaml.safe_load(raw_env)
@@ -144,29 +144,6 @@ def stop_dask_client(client: Client, cluster: LocalCluster = None):
         cluster.close()
 
 
-def extract_storage_directive(path: str) -> str:
-    """Convert a path to the relevant storage directive.
-
-    Parameters
-    ----------
-    path : str
-        Path to something.
-
-    Returns
-    -------
-    str
-        Storage flag required to access the path.
-    """
-    pattern = re.compile(r"^(?P<root>/g/data|/scratch)/(?P<project>[^/]+)")
-    m = pattern.match(path)
-
-    try:
-        root, project = m["root"].replace("/", ""), m["project"]
-        return f"{root}/{project}"
-    except:
-        return None
-
-
 def assemble_storage_directives(
     config: dict, executable_path: str = sys.argv[0]
 ) -> list:
@@ -187,7 +164,7 @@ def assemble_storage_directives(
     storage = []
 
     # Add the flag to the executable
-    storage.append(extract_storage_directive(executable_path))
+    storage.append(hu.extract_storage_directive(executable_path))
 
     # Add scratch/gdata for the project set in config
     project = config.get("project")
@@ -196,11 +173,11 @@ def assemble_storage_directives(
 
     # Add the input directories from config
     for input_path in config.get("directories", []):
-        storage.append(extract_storage_directive(input_path))
+        storage.append(hu.extract_storage_directive(input_path))
 
     # Add the output directory
     if config.get("output_dir"):
-        storage.append(extract_storage_directive(config.get("output_dir")))
+        storage.append(hu.extract_storage_directive(config.get("output_dir")))
 
     # Add anything else from configuration (i.e. supplied by user)
     storage += config.get("job_pbs", {}).get("storage", [])

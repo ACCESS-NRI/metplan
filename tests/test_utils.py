@@ -8,25 +8,6 @@ import metplan.utils as mu
 from metplan.utils.files import list_nc_files
 
 
-def test_extract_storage_directive():
-    """Test to extract storage directives from various paths."""
-
-    project = "abc123"
-
-    # gdata
-    assert f"gdata/{project}" == mu.extract_storage_directive(
-        f"/g/data/{project}/test/test"
-    )
-
-    # scratch
-    assert f"scratch/{project}" == mu.extract_storage_directive(
-        f"/scratch/{project}/test/test"
-    )
-
-    # None
-    assert None == mu.extract_storage_directive("should/be/none")
-
-
 def test_assemble_storage_directives():
     """Test assemble_storage_directives returns for dynamic directives."""
 
