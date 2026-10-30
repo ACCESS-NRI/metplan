@@ -14,7 +14,7 @@ def test_version(parser, capsys):
     """Test metplan -V"""
     # Ensure we catch the system exit
     with pytest.raises(SystemExit) as exc_info:
-        args = parser.parse_args(["-V"])
+        args = mc.parse_args(parser, arg_list=["-V"])
 
     # Clean exit
     assert exc_info.value.code == 0
@@ -22,3 +22,9 @@ def test_version(parser, capsys):
     # Correct output
     captured = capsys.readouterr()
     assert f"metplan {__version__}" in captured.out
+
+
+def test_no_config(parser):
+    """Test to ensure that supplying no user config still parses."""
+    args = mc.parse_args(parser, arg_list=["run", "--all"])
+    assert args["config"] == None
