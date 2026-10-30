@@ -1,11 +1,13 @@
 import copy
 import os
+import re
+import sys
 from importlib import resources
 from pathlib import Path
 
+import hpcpy.utilities as hu
 import yaml
 from distributed import Client, LocalCluster
-from hpcpy.utilities import interpolate_string_template
 
 from metplan.utils.logger import get_logger
 
@@ -82,7 +84,7 @@ def load_config(user_config=None) -> dict:
 
             # Read the raw content
             raw = open(cp, "r").read()
-            raw_env = interpolate_string_template(raw, **os.environ)
+            raw_env = hu.interpolate_string_template(raw, **os.environ)
 
             # Parse the config, interpolating environment vars
             _config = yaml.safe_load(raw_env)
@@ -162,3 +164,50 @@ def stop_dask_client(client: Client, cluster: LocalCluster = None):
     # Optionally stop the cluster
     if isinstance(cluster, LocalCluster):
         cluster.close()
+
+
+def assemble_storage_directives(
+    config: dict, executable_path: str = sys.argv[0]
+) -> list:
+    """Get the storage directive dynamically from config etc.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration
+    executable_path: str
+        Path to the executable, defaults to sys.argv[0]
+
+    Returns
+    -------
+    list
+        List of storage directives.
+    """
+    storage = []
+
+    # Add the flag to the executable
+    storage.append(hu.extract_storage_directive(executable_path))
+
+    # Add scratch/gdata for the project set in config
+    project = config.get("project")
+    storage.append(f"gdata/{project}")
+    storage.append(f"scratch/{project}")
+
+    # Add the input directories from config
+    for input_path in config.get("directories", []):
+        storage.append(hu.extract_storage_directive(input_path))
+
+    # Add the output directory
+    if config.get("output_dir"):
+        storage.append(hu.extract_storage_directive(config.get("output_dir")))
+
+    # Add anything else from configuration (i.e. supplied by user)
+    storage += config.get("job_pbs", {}).get("storage", [])
+
+    # Remove the Nones
+    storage = [x for x in storage if x]
+
+    # Ensure unique
+    storage = list(set(storage))
+
+    return sorted(storage)
