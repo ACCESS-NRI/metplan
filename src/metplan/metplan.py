@@ -66,24 +66,30 @@ with open(PARAM_MAP_FILE_NAME) as file:
     param_map = yaml.safe_load(file)
 
 def preprocess_land_sea_mask(ds: xr.Dataset) -> xr.Dataset:
-    """Make the land-sea mask file compatible with the met forcing files,
-    since it could be unidimensional with time.
     """
-    lsm_names = param_map["landsea"]["input_param"]
-    if not any(name in ds for name in lsm_names):
-        return ds
+    Make the land-sea mask file compatible with the met forcing files,
+    with respect to time.
 
-    if "time" in ds.dims:
-        ds = ds.squeeze("time", drop=True)
+    Parameters
+    ----------
+    ds : xr.Dataset
+        metplan input dataset
 
-    return ds.assign_coords(
-        {
-            dim: ds[dim].astype("float64")
-            for dim in ds.dims
-            if dim in ds.coords and ds[dim].dtype == "float32"
-        }
-    )
+    Returns
+    -------
+    xr.Dataset
 
+    """
+    lsm_names = param_map.get("landsea", {}).get("input_param")
+    if lsm_names is None:
+        raise ValueError("Land-Sea Mask variable not provided in param_map")
+
+    for name in lsm_names:
+        if name in ds:
+                # Time has dimension length of 1 which is different 
+                ds = ds.isel(time=0, drop=True, missing_dims="ignore")
+
+    return ds
 
 def run_met(config, dataset=None):
     """Run preprocessor for meteorological forcing dataset(s)."""
