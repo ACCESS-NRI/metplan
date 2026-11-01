@@ -1,0 +1,3 @@
+[lint]
+# Throw error for print statements
+extend-select = ["T20"]
