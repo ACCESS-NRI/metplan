@@ -33,12 +33,12 @@ def sample_xarray_data():
                 ["lon", "lat", "time"],
                 shortwave_rad,
                 {"units": "J m**-2"},
-            ),  # SWDown
+            ),  # SWdown
             "strd": (
                 ["lon", "lat", "time"],
                 longwave_rad,
                 {"units": "J m**-2"},
-            ),  # LWDown
+            ),  # LWdown
             "t2m": (["lon", "lat", "time"], temperature, {"units": "K"}),  # Tair
             "tp": (["lon", "lat", "time"], rain, {"units": "mm"}),  # Rainf
             "u10": (["lon", "lat", "time"], wind_u, {"units": "m s**-1"}),  # Wind
