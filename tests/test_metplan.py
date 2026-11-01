@@ -83,7 +83,7 @@ def met_run(request):
         client, cluster = mu.start_dask_client(config)
 
         # Run
-        output_dataset = run_met(config, var="SWDown")
+        output_dataset = run_met(config, var="SWdown")
 
         yield output_dataset, expected_dataset
 
