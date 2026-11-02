@@ -1,7 +1,6 @@
-import re
 import json
+import re
 import sys
-from typing import Union
 
 import xarray as xr
 
@@ -24,15 +23,16 @@ def get_era5land_doi(ds: xr.Dataset) -> str:
     """
     try:
         summary = ds.attrs.get("summary")
-        match = re.search(r'https?://[^\s]+?(?=[.,;:!?)]*(?:\s|$))', summary)
+        match = re.search(r"https?://[^\s]+?(?=[.,;:!?)]*(?:\s|$))", summary)
         return match.group(0) if match else "unknown"
     except:
         return "unknown"
 
+
 def apply_provenance(
-    xr_obj: Union[xr.Dataset, xr.DataArray],
+    xr_obj: xr.Dataset | xr.DataArray,
     config: dict,
-    command: str = " ".join(sys.argv[:])
+    command: str = " ".join(sys.argv[:]),
 ) -> xr.Dataset | xr.DataArray:
     """Apply provenence attributes to output files.
 
@@ -55,7 +55,7 @@ def apply_provenance(
     attrs = {
         "metplan_version": __version__,
         "metplan_command": command,
-        "metplan_config": json.dumps(config)
+        "metplan_config": json.dumps(config),
     }
 
     # Get user-supplied provenence from config
@@ -65,7 +65,9 @@ def apply_provenance(
     if isinstance(provenence, dict) and len(provenence):
         attrs.update(**provenence)
     else:
-        mu.get_logger().warning("Provenence metadata is not configured. Data will lack provenence.")
+        mu.get_logger().warning(
+            "Provenence metadata is not configured. Data will lack provenence."
+        )
 
     # Check if ERA5-Land, add the DOI
     if attrs.get("source", None) == "ERA5-Land":

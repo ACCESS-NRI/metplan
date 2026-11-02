@@ -15,7 +15,6 @@ hourly_acc:
   - Rainf
 
 output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan
-# output_file: test.nc
 
 provenence:
   license: CC-BY-4.0
