@@ -16,7 +16,7 @@ hourly_acc:
 
 output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan
 
-provenence:
+provenance:
   license: CC-BY-4.0
   comment: >
     This product contains modified Copernicus Climate Change Service information 2019.  

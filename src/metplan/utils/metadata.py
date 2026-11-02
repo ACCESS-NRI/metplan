@@ -34,7 +34,7 @@ def apply_provenance(
     config: dict,
     command: str = " ".join(sys.argv[:]),
 ) -> xr.Dataset | xr.DataArray:
-    """Apply provenence attributes to output files.
+    """Apply provenance attributes to output files.
 
     Parameters
     ----------
@@ -58,15 +58,15 @@ def apply_provenance(
         "metplan_config": json.dumps(config),
     }
 
-    # Get user-supplied provenence from config
-    provenence = config.get("provenence", {})
+    # Get user-supplied provenance from config
+    provenance = config.get("provenance", {})
 
     # Ensure dict and has data
-    if isinstance(provenence, dict) and len(provenence):
-        attrs.update(**provenence)
+    if isinstance(provenance, dict) and len(provenance):
+        attrs.update(**provenance)
     else:
         mu.get_logger().warning(
-            "Provenence metadata is not configured. Data will lack provenence."
+            "Provenance metadata is not configured. Data will lack provenance."
         )
 
     # Check if ERA5-Land, add the DOI
