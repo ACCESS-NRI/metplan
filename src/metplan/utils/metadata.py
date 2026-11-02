@@ -5,6 +5,7 @@ from typing import Union
 
 import xarray as xr
 
+import metplan.utils as mu
 from metplan import __version__
 
 
@@ -31,8 +32,7 @@ def get_era5land_doi(ds: xr.Dataset) -> str:
 def apply_provenance(
     xr_obj: Union[xr.Dataset, xr.DataArray],
     config: dict,
-    command: str = " ".join(sys.argv[:]),
-    era5land_version: str = None,
+    command: str = " ".join(sys.argv[:])
 ) -> xr.Dataset | xr.DataArray:
     """Apply provenence attributes to output files.
 
@@ -44,8 +44,6 @@ def apply_provenance(
         Configuration for the current run.
     command : str
         Command used to run this instance of metplan.
-    era5land_version : str, optional
-        ERA5-Land version information, by default None
 
     Returns
     -------
@@ -57,9 +55,21 @@ def apply_provenance(
     attrs = {
         "metplan_version": __version__,
         "metplan_command": command,
-        "metplan_config": json.dumps(config),
-        "era5land_version": era5land_version if era5land_version else "unknown",
+        "metplan_config": json.dumps(config)
     }
+
+    # Get user-supplied provenence from config
+    provenence = config.get("provenence", {})
+
+    # Ensure dict and has data
+    if isinstance(provenence, dict) and len(provenence):
+        attrs.update(**provenence)
+    else:
+        mu.get_logger().warning("Provenence metadata is not configured. Data will lack provenence.")
+
+    # Check if ERA5-Land, add the DOI
+    if attrs.get("source", None) == "ERA5-Land":
+        attrs["source_url"] = get_era5land_doi(xr_obj)
 
     # Update and return
     return xr_obj.assign_attrs(**attrs)

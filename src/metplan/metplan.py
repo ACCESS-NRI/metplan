@@ -188,7 +188,7 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
         dataset[var].encoding.update(config.get("encoding"))
 
         # TODO: Need to get the ERA5-Land version from the inputs. Metadata?
-        mum.apply_provenance(dataset[var], config, era5land_version=None).to_netcdf(
+        mum.apply_provenance(dataset[var], config).to_netcdf(
             output_filename, **config.get("to_netcdf")
         )
 

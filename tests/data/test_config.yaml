@@ -16,3 +16,12 @@ hourly_acc:
 
 output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan
 # output_file: test.nc
+
+provenence:
+  license: CC-BY-4.0
+  comment: >
+    This product contains modified Copernicus Climate Change Service information 2019.  
+    Neither the European Commission nor ECMWF is responsible for any use that may be  
+    made of the Copernicus information or data it contains. 
+  acknowledgement: NCRIS, ARC, et cetera
+  source: ERA5-Land

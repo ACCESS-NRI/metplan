@@ -19,6 +19,7 @@ def test_apply_provenance():
     assert ds.attrs["metplan_command"] == dummy_command
     assert ds.attrs["metplan_config"] == json.dumps(dummy_config)
     assert ds.attrs["era5land_version"] == "unknown"
+    assert ds.attrs["license"] == "CC-BY-4.0"
 
 
 def test_get_era5land_version():
