@@ -87,7 +87,7 @@ def get_derivable_var_list(dep_list, dataset: xr.Dataset) -> list:
         if param_map.get(var, {}).get("type") in ("standard", "optional")
     ]
 
-def preprocess_land_sea_mask(ds: xr.Dataset) -> xr.Dataset:
+def preprocess_land_sea_mask(ds: xr.Dataset, threshold: float = 0.5) -> xr.Dataset:
     """
     Make the land-sea mask file compatible with the met forcing files,
     with respect to time.
@@ -102,15 +102,17 @@ def preprocess_land_sea_mask(ds: xr.Dataset) -> xr.Dataset:
     xr.Dataset
 
     """
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
     lsm_names = param_map.get("landsea", {}).get("input_param")
     if lsm_names is None:
         raise ValueError("Land-Sea Mask variable not provided in param_map")
 
     for name in lsm_names:
         if name in ds:
-                # Time has dimension length of 1 which is different 
-                ds = ds.isel(time=0, drop=True, missing_dims="ignore")
-
+            # Time has dimension length of 1 which is different 
+            lsm = ds[name].isel(time=0, drop=True, missing_dims="ignore")
+            ds[name] = xr.where(lsm.fillna(0) >= threshold, 0, 1).astype("int32")
+            ds = ds.drop_vars("time", errors="ignore")
     return ds
 
 def load_dataset(config: dict) -> xr.Dataset:

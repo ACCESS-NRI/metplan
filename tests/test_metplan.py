@@ -12,7 +12,7 @@ import pytest
 import xarray as xr
 
 import metplan.utils as mu
-from metplan.metplan import run_met
+from metplan.metplan import PARAM_MAP_FILE_NAME, run_met
 
 # Receive consistent results with the test output file
 seed_value = 42
@@ -93,6 +93,7 @@ def met_run(request):
 def test_sample_dataset(met_run):
     """Test dataset creation is within tolerances."""
     output_dataset, expected_dataset = met_run
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
     if expected_dataset is None:
         pytest.skip("No expected output for this input")
     for var in output_dataset.data_vars:
