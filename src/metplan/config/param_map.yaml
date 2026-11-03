@@ -166,7 +166,7 @@ CO2air:
           
 landsea:
   type: standard
-  units: (0 - 1)
+  unit: null
   input_param:
     - lsm
 

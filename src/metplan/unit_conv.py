@@ -76,8 +76,11 @@ class UnitConversion:
         )
         return da_days
 
-    def convert_param(self, da: DataArray, out_units: str) -> DataArray:
+    def convert_param(self, da: DataArray, out_units: str | None) -> DataArray:
         """Convert parameter into necessary units."""
+        if out_units is None:
+            self.logger.debug(f"No unit conversion: {da.name}")
+            return da
         self.logger.debug(f"Converting param: {da.name}")
         with units.context(da.name):
             if "month" in str(da.units):
