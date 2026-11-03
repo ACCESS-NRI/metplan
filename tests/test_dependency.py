@@ -44,7 +44,7 @@ class TestGetRenameParamCriteria:
         param_map = {
             "Tair": {"input_param": ["tavg", "temp"]},
             "Rainf": {"input_param": ["rain", "precip"]},
-            "SWDown": {"input_param": ["srad"]},
+            "SWdown": {"input_param": ["srad"]},
         }
 
         result = get_rename_param_criteria(params, param_map)
@@ -52,7 +52,7 @@ class TestGetRenameParamCriteria:
         assert result == {
             "tavg": "Tair",
             "rain": "Rainf",
-            "srad": "SWDown",
+            "srad": "SWdown",
         }
 
     def test_get_rename_param_criteria_partial_match(self):
@@ -105,7 +105,7 @@ class TestGetUnitConvParams:
         param_map = {
             "Tair": {"unit": "kelvin"},
             "Rainf": {"unit": "kg m-2 s-1"},
-            "SWDown": {"unit": "W m-2"},
+            "SWdown": {"unit": "W m-2"},
             "vpd": {},  # No unit
         }
 
@@ -114,7 +114,7 @@ class TestGetUnitConvParams:
         assert len(result) == 3
         assert "Tair" in result
         assert "Rainf" in result
-        assert "SWDown" in result
+        assert "SWdown" in result
         assert "vpd" not in result
 
     def test_get_unit_conv_params_none_unit(self):
@@ -153,7 +153,7 @@ class TestProcessDependencies:
         result = process_dependencies(param_map)
 
         # Optional parameters should be processed
-        assert "LWDown" in result or "PSurf" in result
+        assert "LWdown" in result or "PSurf" in result
 
     def test_process_dependencies_multiple_calc_options(self, param_map):
         """Test that parameters with multiple calc options are handled."""
@@ -257,7 +257,7 @@ def test_ord_deps():
     """Fixture providing expected ordered dependencies."""
     return [
         ("Qair", ["vpd", "Tair"], vpd_tair_sh),
-        ("LWDown", ["Tair"], calc_lwdown_swinbank),
+        ("LWdown", ["Tair"], calc_lwdown_swinbank),
     ]
 
 

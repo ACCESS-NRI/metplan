@@ -12,7 +12,7 @@ import pytest
 import xarray as xr
 
 import metplan.utils as mu
-from metplan.metplan import run_met
+from metplan.metplan import PARAM_MAP_FILE_NAME, run_met
 
 # Receive consistent results with the test output file
 seed_value = 42
@@ -22,8 +22,8 @@ rng = np.random.default_rng(seed=seed_value)
 # https://github.com/CABLE-LSM/CABLE/blob/1701acb7c5dacb88df22d42a7f61d283cb285764/src/offline/cable_checks.F90#L60
 # Constant ranges dict
 ranges = {
-    "SWDown": [0.0, 1360.0],  # W/m^2
-    "LWDown": [0.0, 950.0],  # W/m^2
+    "SWdown": [0.0, 1360.0],  # W/m^2
+    "LWdown": [0.0, 950.0],  # W/m^2
     "Rainf": [0.0, 0.1],  # mm/s
     "Snowf": [0.0, 0.1],  # mm/s
     "PSurf": [500.0, 1100.0],  # mbar/hPa
@@ -83,7 +83,7 @@ def met_run(request):
         client, cluster = mu.start_dask_client(config)
 
         # Run
-        output_dataset = run_met(config, var="SWDown")
+        output_dataset = run_met(config, var="SWdown")
 
         yield output_dataset, expected_dataset
 
@@ -93,13 +93,16 @@ def met_run(request):
 def test_sample_dataset(met_run):
     """Test dataset creation is within tolerances."""
     output_dataset, expected_dataset = met_run
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
     if expected_dataset is None:
         pytest.skip("No expected output for this input")
     for var in output_dataset.data_vars:
+        # Check units
+        assert output_dataset[var].attrs["units"] == param_map[var]["unit"], var
+        # Check values upto tolerance
         xr.testing.assert_allclose(
             output_dataset[var], expected_dataset[var], rtol=tolerances[var]
         )
-
 
 @pytest.fixture(scope="module")
 def cable_time_reference():
@@ -117,3 +120,11 @@ def test_dataset_time_encoding(met_run, cable_time_reference):
     encoding = output_dataset["time"].encoding
     assert encoding["units"] == cable_time_reference["units"]
     assert encoding["calendar"] == cable_time_reference["calendar"]
+
+def test_output_has_cable_lat_lon_dims(met_run):
+    """Written variables use lat/lon dimensions with lat/lon coordinates."""
+    output_dataset, _ = met_run
+    for var in output_dataset.data_vars:
+        assert {"lat", "lon"} <= set(output_dataset[var].dims)
+    assert output_dataset["lat"].dims == ("lat",)
+    assert output_dataset["lon"].dims == ("lon",)

@@ -5,6 +5,7 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Hashable
 
 import xarray as xr
 from hpcpy import get_client
@@ -22,16 +23,33 @@ logger = get_logger()
 OUTPUT_FILE_FORMAT = "NETCDF4"
 PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
 
+def get_rename_param_criteria(params, param_map, coords=()) -> dict[Hashable, str]:
+    """ Data variables are renamed by standard/optional/conversion entries,
+    coordinates/dimensions by `coordinate` entries (eg. latitude -> lat) based
+    on param_map.yaml
 
-def get_rename_param_criteria(params, param_map):
-    """All input_param act as keys with the original key as value."""
-    param_criteria = {}
+    Parameters
+    ----------
+    params : 
+        Data variable names present in the input dataset.
+    param_map : 
+        Parameter map loaded from `param_map.yaml`.
+    coords : 
+        Coordinate and dimension names present in the input dataset,
+        by default ().
+
+    Returns
+    -------
+    dict[Hashable, str]
+        Mapping of input name -> name in param_map
+    """
+    param_criteria: dict[Hashable, str] = {}
     for param, param_info in param_map.items():
+        candidates = coords if param_info.get("type") == "coordinate" else params
         for input_value in param_info.get("input_param", []):
-            if input_value in params:
+            if input_value in candidates:
                 param_criteria[input_value] = param
     return param_criteria
-
 
 def get_unit_conv_params(param_map):
     """Units conversions are to be done for all params having unit in mapping."""
@@ -66,6 +84,79 @@ def get_derivable_var_list(dep_list, dataset: xr.Dataset) -> list:
         if param_map.get(var, {}).get("type") in ("standard", "optional")
     ]
 
+def standardise_grid(ds: xr.Dataset) -> xr.Dataset:
+    """
+    - Longitude wrapped to [-180, 180) (ERA5-Land convention)
+    - lat/lon rounded for consistent values during joining datasets  
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset
+    param_map : dict
+        Parameter Mappning
+
+    Returns
+    -------
+    xr.Dataset
+        standardised dataset
+    """
+    # We don't use param_map since different models could
+    # have different output names
+    lon_names = ["longitude", "lon"]
+    lat_names = ["latitude", "lat"]
+    for lon in lon_names:
+        if lon in ds.coords:
+            wrapped = (((ds[lon] + 180) % 360) - 180).round(3)
+            ds = ds.assign_coords({lon: wrapped}).sortby(lon)
+    for lat in lat_names:
+        if lat in ds.coords:
+            ds = ds.assign_coords({lat: ds[lat].round(3)})
+    return ds
+
+def preprocess_land_sea_mask(ds: xr.Dataset, param_map: dict, threshold: float = 0.5) -> xr.Dataset:
+    """
+    Make the land-sea mask file compatible with the met forcing files,
+    with respect to time.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        metplan input dataset
+
+    Returns
+    -------
+    xr.Dataset
+
+    """
+    lsm_names = param_map.get("landsea", {}).get("input_param")
+    if lsm_names is None:
+        raise ValueError("Land-Sea Mask variable not provided in param_map")
+
+    for name in lsm_names:
+        if name in ds:
+            # Time has dimension length of 1 which is different 
+            lsm = ds[name].isel(time=0, drop=True, missing_dims="ignore")
+            ds[name] = xr.where(lsm.fillna(0) >= threshold, 0, 1).astype("int32")
+            ds = ds.drop_vars("time", errors="ignore")
+    return ds
+
+def preprocess_dataset(ds: xr.Dataset) -> xr.Dataset:
+    """Per-file preprocessor from xr.open_mfdataset.
+    
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset
+
+    Returns
+    -------
+    xr.Dataset
+        Preprocessed dataset
+    """
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
+    ds = standardise_grid(ds)
+    ds = preprocess_land_sea_mask(ds, param_map)
+    return ds
 
 def load_dataset(config: dict) -> xr.Dataset:
     """Load the dataset.
@@ -89,15 +180,22 @@ def load_dataset(config: dict) -> xr.Dataset:
     logger.info("Loading combined dataset")
     dataset = xr.open_mfdataset(
         file_list,
+        preprocess=preprocess_dataset,
         compat="override",
         coords="minimal",
         chunks={"time": 24, "longitude": -1, "latitude": -1},
-        engine="h5netcdf",
+        engine="netcdf4",
         parallel=True,
     )
     logger.info("Loaded combined dataset")
     logger.debug(dataset)
     logger.debug(dataset.chunks)
+
+    if config.get("debug", {}).get("single_day"):
+        dataset = dataset.sel(
+            time=slice("1950-01-01 00:00:00", "1950-01-02 23:59:59"), drop=True
+        )
+    
     return dataset
 
 
@@ -123,7 +221,7 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     tic = time.perf_counter()
 
     # 2. Hourly accumulator
-    for v in config.get("hourly_acc"):
+    for v in config.get("hourly_acc", []):
         dataset[v] = daily_to_hourly_acc(dataset[v])
 
     # 3. Unit conversions
@@ -171,18 +269,32 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
         )
     )
 
+    # NOTE: CABLE-specific settings
+
+    # CABLE reads variables as Fortran (x, y, time), ie. netCDF (time, lat, lon)
+    dataset = dataset.transpose("time", "lat", "lon", missing_dims="ignore")
+
+    # CABLE time-steps
     dataset["time"].encoding["units"] = "hours since 1900-01-01 01:00:00"
     dataset["time"].encoding["calendar"] = "proleptic_gregorian"
 
     logger.info("Saving dataset")
-    logger.debug(dataset)
 
     # Ensure that the output directory exists
     os.makedirs(config.get("output_dir"), exist_ok=True)
 
+
     output_filename = config.get("output_dir") + f"/{var}.nc"
     logger.debug(f"Saving var: {var}")
-    dataset[var].encoding.update(config.get("encoding"))
+    # xarray on netcdf4 engine unpacks scale_factor/add_offset, but
+    # keeps the attributes
+    for key in ("scale_factor", "add_offset"):
+        dataset[var].encoding.pop(key, None)
+    encoding = {
+        **config.get("encoding", {}),
+        **config.get("encoding_overrides", {}).get(var, {}),
+    }
+    dataset[var].encoding.update(encoding)
     dataset[var].to_netcdf(output_filename, **config.get("to_netcdf"))
 
     logger.info("Saved dataset - Check log.txt for warnings")
@@ -219,7 +331,11 @@ def run_met(config: dict, var: str = None) -> xr.Dataset | None:
 
     # 1. Rename parameters
     logger.debug("Getting renaming param criteria")
-    param_criteria = get_rename_param_criteria(list(dataset.keys()), param_map)
+    param_criteria = get_rename_param_criteria(
+        list(dataset.data_vars),
+        param_map,
+        coords=set(dataset.coords) | set(dataset.dims),
+    )
     dataset = dataset.rename(param_criteria)
 
     logger.debug("Generating dependency list")

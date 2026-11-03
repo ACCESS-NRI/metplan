@@ -2,6 +2,7 @@
 #PBS -l wd
 #PBS -l ncpus={{ncpus}}
 #PBS -l mem={{mem}}
+#PBS -l jobfs={{ jobfs | default('100GB') }}
 #PBS -l walltime={{walltime}}
 #PBS -q normal
 #PBS -P {{project}}
