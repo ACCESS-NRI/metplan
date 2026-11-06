@@ -70,7 +70,7 @@ def apply_provenance(
         )
 
     # Check if ERA5-Land, add the DOI
-    if attrs.get("source", None) == "ERA5-Land":
+    if attrs.get("source", None) == "ERA5-Land" and not attrs.get("source_url"):
         attrs["source_url"] = get_era5land_doi(xr_obj)
 
     # Update and return
