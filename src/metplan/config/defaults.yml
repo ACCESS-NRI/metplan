@@ -40,7 +40,7 @@ cluster_local:
   n_workers: 1
 
 debug:
-  single_day: true
+  single_day: false
 
 # Outputs
 output_dir: /scratch/{{ PROJECT | default('TEST_PROJECT') }}/{{ USER | default('TEST_USER') }}/metplan
