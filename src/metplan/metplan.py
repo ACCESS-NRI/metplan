@@ -11,6 +11,7 @@ import xarray as xr
 from hpcpy import get_client
 
 import metplan.utils as mu
+import metplan.utils.metadata as mum
 from metplan.accu import daily_to_hourly_acc
 from metplan.dependency import generate_calculations
 from metplan.unit_conv import UnitConversion
@@ -363,6 +364,10 @@ def run_met(config: dict, var: str = None) -> xr.Dataset | None:
         logger.debug(f"metplan_path = {metplan_path}")
         logger.debug(f"jobscript_path = {jobscript_path}")
 
+        # Assemble dynamic storage directives
+        pbs_config = config.get("job_pbs")
+        pbs_config["storage"] = mu.assemble_storage_directives(config)
+
         for var in get_derivable_var_list(dep_list, dataset):
 
             metplan_path = shutil.which(sys.argv[0])
@@ -372,7 +377,7 @@ def run_met(config: dict, var: str = None) -> xr.Dataset | None:
                 metplan_path=metplan_path,
                 metplan_var=var,
                 project=config.get("project"),
-                **config.get("job_pbs"),
+                **pbs_config,
                 config_path=config["user_config"],
                 directives=[f"-N {var}"],
             )
