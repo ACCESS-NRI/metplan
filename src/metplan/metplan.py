@@ -137,6 +137,8 @@ def preprocess_land_sea_mask(ds: xr.Dataset, param_map: dict, threshold: float =
         if name in ds:
             # Time has dimension length of 1 which is different 
             lsm = ds[name].isel(time=0, drop=True, missing_dims="ignore")
+            # Currently, CABLE gswp3 uses 1 for sea and 0 for land
+            # https://github.com/CABLE-LSM/CABLE/blob/39d02fa525493d6530900c15ddf6f77bf6073cc8/src/offline/cable_input.F90#L693
             ds[name] = xr.where(lsm.fillna(0) >= threshold, 0, 1).astype("int32")
             ds = ds.drop_vars("time", errors="ignore")
     return ds

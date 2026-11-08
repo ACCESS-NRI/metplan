@@ -12,7 +12,12 @@ import pytest
 import xarray as xr
 
 import metplan.utils as mu
-from metplan.metplan import PARAM_MAP_FILE_NAME, run_met
+from metplan.metplan import (
+    PARAM_MAP_FILE_NAME,
+    preprocess_land_sea_mask,
+    run_met,
+    standardise_grid,
+)
 
 # Receive consistent results with the test output file
 seed_value = 42
@@ -75,7 +80,6 @@ def met_run(request):
     expected_dataset = xr.open_dataset(expected_path)
 
     with tempfile.TemporaryDirectory() as td:
-
         # Write to the temp space
         config["output_dir"] = td
 
@@ -104,6 +108,66 @@ def test_sample_dataset(met_run):
             output_dataset[var], expected_dataset[var], rtol=tolerances[var]
         )
 
+
+class TestStandardiseGrid:
+
+    def test_preprocess_unwrapped_grid_data(self):
+        """0-360 longitudes are wrapped to [-180, 180) and sorted ascending.
+        Latitude is rounded but keeps its (north to south) order."""
+        ds = xr.Dataset(
+            {"t": (("lat", "lon"), [[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])},
+            coords={
+                "lon": [0.0, 90.0, 180.0, 270.0],
+                "lat": [-40.0, -40.5],
+            },
+        )
+        out = standardise_grid(ds)
+        # Longitude gets wrapped
+        np.testing.assert_array_equal(out["lon"], [-180.0, -90.0, 0.0, 90.0])
+        # Latitude remains same
+        np.testing.assert_array_equal(out["lat"], [-40.0, -40.5])
+        # Data must move with its coordinate
+        np.testing.assert_array_equal(
+            out["t"], [[2.0, 3.0, 0.0, 1.0], [6.0, 7.0, 4.0, 5.0]]
+        )
+
+
+    def test_preprocess_wrapped_data(self):
+        """Lat/lon already in range, so dataset should be preserved."""
+        lon = [-99.0, -98.75, 143.5, 179.9]
+        lat = [90.0, 0.0, -42.25, -90.0]
+        ds = xr.Dataset(coords={"lon": lon, "lat": lat})
+        out = standardise_grid(ds)
+        np.testing.assert_allclose(out["lon"], lon)
+        np.testing.assert_allclose(out["lat"], lat)
+
+
+class TestPreprocessLandSeaMask:
+    """Testing for preprocess_land_sea_mask."""
+ 
+    @pytest.fixture
+    def lsm_dataset(self):
+        """ERA5-Land like landsea mask dataset with a length-1 time dimension."""
+        frac = np.array([[[0.0, 0.49], [0.5, 1.0]]])  # (time, lat, lon)
+        return xr.Dataset(
+            {"lsm": (("time", "lat", "lon"), frac)},
+            coords={
+                "time": pd.to_datetime(["1950-01-01"]),
+                "lat": [-42.0, -42.1],
+                "lon": [147.0, 147.1],
+            },
+        )
+ 
+    def test_preprocess_land_sea_mask(self, lsm_dataset):
+        param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
+        out = preprocess_land_sea_mask(lsm_dataset, param_map)
+        # fraction >= 0.5 is land (0), otherwise sea (1).
+        np.testing.assert_array_equal(out["lsm"].values, [[1, 1], [0, 0]])
+        assert out["lsm"].dtype == np.int32
+        # Time dimension is removed and only lat/lon remain
+        assert "time" not in out["lsm"].dims
+        assert out["lsm"].dims == ("lat", "lon")
+
 @pytest.fixture(scope="module")
 def cable_time_reference():
     """CABLE expects the time axis to be encoded relative to this reference."""
@@ -120,6 +184,7 @@ def test_dataset_time_encoding(met_run, cable_time_reference):
     encoding = output_dataset["time"].encoding
     assert encoding["units"] == cable_time_reference["units"]
     assert encoding["calendar"] == cable_time_reference["calendar"]
+
 
 def test_output_has_cable_lat_lon_dims(met_run):
     """Written variables use lat/lon dimensions with lat/lon coordinates."""
