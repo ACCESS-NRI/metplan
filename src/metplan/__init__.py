@@ -4,7 +4,8 @@
 
 Top-level package for metplan.
 """
+from . import _version
 
 __author__ = "ACCESS-NRI and contributors"
 __email__ = "abhaas.goyal@anu.edu.au"
-__version__ = "0.0.1"
+__version__ = _version.get_versions()['version']
