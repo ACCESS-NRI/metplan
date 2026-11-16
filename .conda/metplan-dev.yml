@@ -20,8 +20,10 @@ dependencies:
   - pytest>=6.2.4
   - python==3.13
   - ruff>=0.9
+  - setuptools
   - sphinx>=8.0
   - tox>=4.0
+  - versioneer
   - twine
   - watchdog
   - wheel

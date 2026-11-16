@@ -2,8 +2,8 @@ metplan: Met-forcings Preprocessor
 =======
 
 
-![PyPI version](https://img.shields.io/pypi/v/metplan.svg)
-[![Build Status](https://img.shields.io/travis/ACCESS-NRI/metplan.svg)](https://travis-ci.com/ACCESS-NRI/metplan)
+[![GitHub tag](https://img.shields.io/github/v/tag/ACCESS-NRI/metplan?sort=semver&label=version)](https://github.com/ACCESS-NRI/metplan/tags)
+[![CI](https://github.com/ACCESS-NRI/metplan/actions/workflows/ci.yml/badge.svg)](https://github.com/ACCESS-NRI/metplan/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/metplan/badge/?version=latest)](https://metplan.readthedocs.io/en/latest/?version=latest)
 
 Python package for preprocessing the met forcings for land models.
