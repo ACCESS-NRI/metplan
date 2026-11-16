@@ -19,6 +19,7 @@ requirements:
   host:
     - python==3.13
     - pip
+    - setuptools
     - versioneer
   run:
     - dask>=2025.5
