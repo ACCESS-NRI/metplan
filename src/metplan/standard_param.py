@@ -1,6 +1,7 @@
 import metpy.calc as mpcalc
 from metpy.units import check_units
 from metpy.xarray import preprocess_and_wrap
+import xarray as xr
 
 
 # Specific humidity calculations
@@ -46,3 +47,23 @@ def _calc_sh(vp, svp, tair):
     specific_humidity = mpcalc.specific_humidity_from_mixing_ratio(mixing_ratio)
 
     return specific_humidity
+
+# Creation of a valid data mask
+def get_valid_mask(tair: xr.DataArray) -> xr.DataArray:
+    '''
+    Create a mask 0 indicates the dataset has valid data and 1 indicates missing data. 
+    This is done by checking if the temperature data is NaN or not.
+    
+    Parameters
+    ----------
+    tair: xarray.DataArray
+        The temperature data array to check for NaN values.
+        
+    Returns
+    -------
+    valid_mask: xarray.DataArray
+        A valid data mask where 0 indicates valid data and 1 indicates missing data.
+    '''
+    
+    valid_mask = xr.where(xr.ufuncs.isnan(tair.isel(time=0)), 1, 0).astype("int32")
+    return valid_mask
