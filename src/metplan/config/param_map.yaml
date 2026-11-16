@@ -164,11 +164,14 @@ CO2air:
         default_co2
 
           
-landsea:
+valid_mask:
   type: standard
   unit: null
-  input_param:
-    - lsm
+  calc:
+    - deps:
+        Tair
+      func:
+        get_valid_mask
 
 # Only for flux-site runs
 # patchfrac:
