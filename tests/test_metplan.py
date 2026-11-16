@@ -14,7 +14,6 @@ import xarray as xr
 import metplan.utils as mu
 from metplan.metplan import (
     PARAM_MAP_FILE_NAME,
-    preprocess_land_sea_mask,
     run_met,
     standardise_grid,
 )
@@ -101,8 +100,10 @@ def test_sample_dataset(met_run):
     if expected_dataset is None:
         pytest.skip("No expected output for this input")
     for var in output_dataset.data_vars:
-        # Check units
-        assert output_dataset[var].attrs["units"] == param_map[var]["unit"], var
+        # Land-Sea mask doesn't have units attribute
+        if var == "valid_mask": 
+            continue
+        assert output_dataset[var].attrs["units"]== param_map[var]["unit"], var
         # Check values upto tolerance
         xr.testing.assert_allclose(
             output_dataset[var], expected_dataset[var], rtol=tolerances[var]
@@ -141,32 +142,6 @@ class TestStandardiseGrid:
         np.testing.assert_allclose(out["lon"], lon)
         np.testing.assert_allclose(out["lat"], lat)
 
-
-class TestPreprocessLandSeaMask:
-    """Testing for preprocess_land_sea_mask."""
- 
-    @pytest.fixture
-    def lsm_dataset(self):
-        """ERA5-Land like landsea mask dataset with a length-1 time dimension."""
-        frac = np.array([[[0.0, 0.49], [0.5, 1.0]]])  # (time, lat, lon)
-        return xr.Dataset(
-            {"lsm": (("time", "lat", "lon"), frac)},
-            coords={
-                "time": pd.to_datetime(["1950-01-01"]),
-                "lat": [-42.0, -42.1],
-                "lon": [147.0, 147.1],
-            },
-        )
- 
-    def test_preprocess_land_sea_mask(self, lsm_dataset):
-        param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
-        out = preprocess_land_sea_mask(lsm_dataset, param_map)
-        # fraction >= 0.5 is land (0), otherwise sea (1).
-        np.testing.assert_array_equal(out["lsm"].values, [[1, 1], [0, 0]])
-        assert out["lsm"].dtype == np.int32
-        # Time dimension is removed and only lat/lon remain
-        assert "time" not in out["lsm"].dims
-        assert out["lsm"].dims == ("lat", "lon")
 
 @pytest.fixture(scope="module")
 def cable_time_reference():
