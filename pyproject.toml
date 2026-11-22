@@ -1,10 +1,24 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools", "versioneer[toml]"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "metplan"
-version = "0.1"
+description = "Python package for preprocessing the met forcings for land models."
+dynamic = ["version"]
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "src/metplan/_version.py"
+versionfile_build = "metplan/_version.py"
+tag_prefix = "v"
+parentdir_prefix = "metplan-"
 
 [project.scripts]
 metplan = "metplan.cli:cli"
@@ -12,3 +26,9 @@ metplan = "metplan.cli:cli"
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "DEBUG"
+
+[tool.coverage.run]
+omit = ["*/metplan/_version.py"]
+
+[tool.setuptools.package-data]
+metplan = ["config/*.yml", "config/*.yaml", "data/*.j2"]
