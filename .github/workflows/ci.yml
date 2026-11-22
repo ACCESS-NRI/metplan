@@ -39,6 +39,11 @@ jobs:
         shell: bash -l {0}
         run: coverage xml
 
+      - name: Docs - Docstrings
+        run: |
+          python -m pip install pydocstyle
+          pydocstyle --ignore=D107,D213,D203,D413,D105 .
+
       - name: Upload code coverage
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe
         with:
