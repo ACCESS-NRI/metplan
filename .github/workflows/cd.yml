@@ -3,6 +3,7 @@ name: Conda Publish
 on:
   release:
     types: [released]
+  workflow_dispatch:
 
 jobs:
   publish_python_package:
