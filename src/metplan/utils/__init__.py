@@ -133,8 +133,9 @@ def start_dask_client(config: dict) -> tuple[Client, LocalCluster]:
         cluster = LocalCluster(**config.get("cluster_local"))
     else:
         logger.debug("JOBFS detected, starting LocalCluster within HPC job")
+        n_workers = config.get("cluster_pbs", {}).get("n_workers", 1)
         cluster = LocalCluster(
-            memory_limit=int(os.environ["PBS_VMEM"]),
+            memory_limit=int(os.environ["PBS_VMEM"]) // n_workers,
             local_directory=os.path.join(os.environ["PBS_JOBFS"], "dask-worker-space"),
             **config.get("cluster_pbs"),
         )

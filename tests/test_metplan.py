@@ -12,7 +12,11 @@ import pytest
 import xarray as xr
 
 import metplan.utils as mu
-from metplan.metplan import run_met
+from metplan.metplan import (
+    PARAM_MAP_FILE_NAME,
+    run_met,
+    standardise_grid,
+)
 
 # Receive consistent results with the test output file
 seed_value = 42
@@ -22,8 +26,8 @@ rng = np.random.default_rng(seed=seed_value)
 # https://github.com/CABLE-LSM/CABLE/blob/1701acb7c5dacb88df22d42a7f61d283cb285764/src/offline/cable_checks.F90#L60
 # Constant ranges dict
 ranges = {
-    "SWDown": [0.0, 1360.0],  # W/m^2
-    "LWDown": [0.0, 950.0],  # W/m^2
+    "SWdown": [0.0, 1360.0],  # W/m^2
+    "LWdown": [0.0, 950.0],  # W/m^2
     "Rainf": [0.0, 0.1],  # mm/s
     "Snowf": [0.0, 0.1],  # mm/s
     "PSurf": [500.0, 1100.0],  # mbar/hPa
@@ -75,7 +79,6 @@ def met_run(request):
     expected_dataset = xr.open_dataset(expected_path)
 
     with tempfile.TemporaryDirectory() as td:
-
         # Write to the temp space
         config["output_dir"] = td
 
@@ -83,7 +86,7 @@ def met_run(request):
         client, cluster = mu.start_dask_client(config)
 
         # Run
-        output_dataset = run_met(config, var="SWDown")
+        output_dataset = run_met(config, var="SWdown")
 
         yield output_dataset, expected_dataset
 
@@ -93,12 +96,51 @@ def met_run(request):
 def test_sample_dataset(met_run):
     """Test dataset creation is within tolerances."""
     output_dataset, expected_dataset = met_run
+    param_map = mu.load_param_map(PARAM_MAP_FILE_NAME)
     if expected_dataset is None:
         pytest.skip("No expected output for this input")
     for var in output_dataset.data_vars:
+        # Land-Sea mask doesn't have units attribute
+        if var == "valid_mask": 
+            continue
+        assert output_dataset[var].attrs["units"]== param_map[var]["unit"], var
+        # Check values upto tolerance
         xr.testing.assert_allclose(
             output_dataset[var], expected_dataset[var], rtol=tolerances[var]
         )
+
+
+class TestStandardiseGrid:
+
+    def test_preprocess_unwrapped_grid_data(self):
+        """0-360 longitudes are wrapped to [-180, 180) and sorted ascending.
+        Latitude is rounded but keeps its (north to south) order."""
+        ds = xr.Dataset(
+            {"t": (("lat", "lon"), [[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])},
+            coords={
+                "lon": [0.0, 90.0, 180.0, 270.0],
+                "lat": [-40.0, -40.5],
+            },
+        )
+        out = standardise_grid(ds)
+        # Longitude gets wrapped
+        np.testing.assert_array_equal(out["lon"], [-180.0, -90.0, 0.0, 90.0])
+        # Latitude remains same
+        np.testing.assert_array_equal(out["lat"], [-40.0, -40.5])
+        # Data must move with its coordinate
+        np.testing.assert_array_equal(
+            out["t"], [[2.0, 3.0, 0.0, 1.0], [6.0, 7.0, 4.0, 5.0]]
+        )
+
+
+    def test_preprocess_wrapped_data(self):
+        """Lat/lon already in range, so dataset should be preserved."""
+        lon = [-99.0, -98.75, 143.5, 179.9]
+        lat = [90.0, 0.0, -42.25, -90.0]
+        ds = xr.Dataset(coords={"lon": lon, "lat": lat})
+        out = standardise_grid(ds)
+        np.testing.assert_allclose(out["lon"], lon)
+        np.testing.assert_allclose(out["lat"], lat)
 
 
 @pytest.fixture(scope="module")
@@ -117,3 +159,12 @@ def test_dataset_time_encoding(met_run, cable_time_reference):
     encoding = output_dataset["time"].encoding
     assert encoding["units"] == cable_time_reference["units"]
     assert encoding["calendar"] == cable_time_reference["calendar"]
+
+
+def test_output_has_cable_lat_lon_dims(met_run):
+    """Written variables use lat/lon dimensions with lat/lon coordinates."""
+    output_dataset, _ = met_run
+    for var in output_dataset.data_vars:
+        assert {"lat", "lon"} <= set(output_dataset[var].dims)
+    assert output_dataset["lat"].dims == ("lat",)
+    assert output_dataset["lon"].dims == ("lon",)

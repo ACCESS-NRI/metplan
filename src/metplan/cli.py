@@ -138,6 +138,7 @@ def cli():
     # Set up the logger, remove verbosity
     log_level = "debug" if args.pop("verbose") else "info"
     logger = get_logger(level=log_level)
+    logger.setLevel(log_level.upper())
 
     # Dispatch to command
     logger.debug("Dispatching")
