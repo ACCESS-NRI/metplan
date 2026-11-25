@@ -18,7 +18,6 @@ from metplan.utils.files import list_nc_files
 from metplan.utils.logger import get_logger
 
 xr.set_options(keep_attrs=True)
-logger = get_logger()
 
 OUTPUT_FILE_FORMAT = "NETCDF4"
 PARAM_MAP_FILE_NAME = mu.get_installed_root() / "config" / "param_map.yaml"
@@ -81,6 +80,9 @@ def load_dataset(config: dict) -> xr.Dataset:
     xr.Dataset
         Dataset
     """
+
+    logger = get_logger()
+
     file_list = []
     for dir in config.get("directories"):
         logger.debug(f"Adding {dir}")
@@ -121,6 +123,9 @@ def _run_met(config: dict, var: str, dataset: xr.Dataset, dep_list: list) -> xr.
     xr.Dataset
         Processed dataset.
     """
+
+    logger = get_logger()
+
     tic = time.perf_counter()
 
     # 2. Hourly accumulator
